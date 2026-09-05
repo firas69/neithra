@@ -89,7 +89,7 @@ class ProfileScreen extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 4),
                                       const Text(
-                                        'A day counts when you complete at least one test.',
+                                        'A day counts when you complete at least one exam.',
                                       ),
                                     ],
                                   ),

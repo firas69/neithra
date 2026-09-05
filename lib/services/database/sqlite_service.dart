@@ -11,6 +11,7 @@ import '../../models/session_snapshot_model.dart';
 import '../../models/test_attempt_model.dart';
 import '../../models/test_model.dart';
 import '../../models/user_profile_model.dart';
+import '../exam_fingerprint_service.dart';
 
 class SqliteService {
   static final SqliteService _instance = SqliteService._internal();
@@ -29,7 +30,7 @@ class SqliteService {
     final path = join(await getDatabasesPath(), 'quiz_app.db');
     return openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _createTables,
       onUpgrade: _upgradeTables,
     );
@@ -135,6 +136,10 @@ class SqliteService {
       await _createImportedTestsTable(db);
       await _createTestAttemptsTable(db);
     }
+
+    if (oldVersion < 4) {
+      await _addColumnIfMissing(db, 'imported_tests', 'contentHash', 'TEXT');
+    }
   }
 
   Future<void> _createProfileTable(Database db) async {
@@ -153,6 +158,7 @@ class SqliteService {
       CREATE TABLE IF NOT EXISTS imported_tests(
         id TEXT PRIMARY KEY,
         displayName TEXT NOT NULL,
+        contentHash TEXT,
         testJson TEXT NOT NULL,
         importedAt TEXT NOT NULL,
         updatedAt TEXT NOT NULL,
@@ -226,6 +232,7 @@ class SqliteService {
     await db.insert('imported_tests', {
       'id': importedTest.id,
       'displayName': importedTest.displayName,
+      'contentHash': importedTest.contentHash,
       'testJson': jsonEncode(importedTest.test.toJson()),
       'importedAt': importedTest.importedAt.toIso8601String(),
       'updatedAt': importedTest.updatedAt.toIso8601String(),
@@ -242,7 +249,16 @@ class SqliteService {
 
     for (final row in rows) {
       try {
-        tests.add(_importedTestFromRow(row));
+        final importedTest = _importedTestFromRow(row);
+        if (importedTest.contentHash.isEmpty) {
+          final backfilled = importedTest.copyWith(
+            contentHash: ExamFingerprintService.hashTest(importedTest.test),
+          );
+          await saveImportedTest(backfilled);
+          tests.add(backfilled);
+        } else {
+          tests.add(importedTest);
+        }
       } catch (e) {
         debugPrint('Skipping malformed imported test ${row['id']}: $e');
       }
@@ -251,11 +267,36 @@ class SqliteService {
     return tests;
   }
 
+  Future<ImportedTest?> getImportedTestByContentHash(String contentHash) async {
+    final db = await database;
+    final rows = await db.query(
+      'imported_tests',
+      where: 'contentHash = ?',
+      whereArgs: [contentHash],
+      orderBy: 'importedAt ASC',
+      limit: 1,
+    );
+
+    if (rows.isEmpty) {
+      final backfilledTests = await getImportedTests();
+      for (final importedTest in backfilledTests) {
+        if (importedTest.contentHash == contentHash) return importedTest;
+      }
+      return null;
+    }
+    try {
+      return _importedTestFromRow(rows.first);
+    } catch (e) {
+      debugPrint('Failed to read imported exam by hash: $e');
+      return null;
+    }
+  }
+
   Future<void> renameImportedTest(String id, String displayName) async {
     final db = await database;
     final trimmed = displayName.trim();
     if (trimmed.isEmpty) {
-      throw ArgumentError('Test name cannot be empty');
+      throw ArgumentError('Exam name cannot be empty');
     }
 
     final rows = await db.query(
@@ -544,6 +585,7 @@ class SqliteService {
     return ImportedTest.fromJson({
       'id': row['id'],
       'displayName': row['displayName'],
+      'contentHash': row['contentHash'],
       'test': test.toJson(),
       'importedAt': row['importedAt'],
       'updatedAt': row['updatedAt'],

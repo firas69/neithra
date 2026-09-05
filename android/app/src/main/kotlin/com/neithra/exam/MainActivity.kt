@@ -1,4 +1,4 @@
-package com.neithra.practice
+package com.neithra.exam
 
 import io.flutter.embedding.android.FlutterActivity
 

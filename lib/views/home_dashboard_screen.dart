@@ -13,8 +13,8 @@ import '../providers/profile_provider.dart';
 import '../providers/session_provider.dart';
 import '../providers/test_library_provider.dart';
 import '../services/json_parser_service.dart';
-import 'practice_screen.dart';
-import 'test_detail_screen.dart';
+import 'exam_screen.dart';
+import 'exam_detail_screen.dart';
 
 class HomeDashboardScreen extends StatelessWidget {
   const HomeDashboardScreen({super.key});
@@ -65,7 +65,7 @@ class HomeDashboardScreen extends StatelessWidget {
                                     username:
                                         profileProvider.profile?.username ??
                                         'there',
-                                    testsCount: libraryProvider.tests.length,
+                                    examsCount: libraryProvider.tests.length,
                                     attemptsCount:
                                         historyProvider.attempts.length,
                                   ),
@@ -76,7 +76,7 @@ class HomeDashboardScreen extends StatelessWidget {
                                   const SizedBox(height: 16),
                                   _QuickActions(),
                                   const SizedBox(height: 16),
-                                  _RecentTests(tests: libraryProvider.tests),
+                                  _RecentExams(exams: libraryProvider.tests),
                                 ],
                               );
                             },
@@ -93,12 +93,12 @@ class HomeDashboardScreen extends StatelessWidget {
 
 class _HeroPanel extends StatelessWidget {
   final String username;
-  final int testsCount;
+  final int examsCount;
   final int attemptsCount;
 
   const _HeroPanel({
     required this.username,
-    required this.testsCount,
+    required this.examsCount,
     required this.attemptsCount,
   });
 
@@ -116,14 +116,14 @@ class _HeroPanel extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             const Text(
-              'Pick up a saved session or import your next JSON test.',
+              'Pick up a saved session or import your next JSON exam.',
             ),
             const SizedBox(height: 16),
             Wrap(
               spacing: 10,
               runSpacing: 10,
               children: [
-                _StatChip(icon: Icons.quiz, label: '$testsCount tests'),
+                _StatChip(icon: Icons.quiz, label: '$examsCount exams'),
                 _StatChip(
                   icon: Icons.fact_check_outlined,
                   label: '$attemptsCount attempts',
@@ -181,8 +181,7 @@ class _ResumeCard extends StatelessWidget {
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      PracticeScreen(resumeSessionId: session.id),
+                  builder: (context) => ExamScreen(resumeSessionId: session.id),
                 ),
               ),
             ),
@@ -211,22 +210,41 @@ class _QuickActions extends StatelessWidget {
             const SizedBox(height: 12),
             FilledButton.icon(
               icon: const Icon(Icons.upload_file),
-              label: const Text('Upload Test'),
+              label: const Text('Upload Exam'),
               onPressed: () => _importFromFile(context),
             ),
             const SizedBox(height: 10),
             OutlinedButton.icon(
               icon: const Icon(Icons.library_books_outlined),
-              label: const Text('Use Sample Test'),
+              label: const Text('Use Sample Exam'),
               onPressed: () async {
                 final imported = await context
                     .read<TestLibraryProvider>()
                     .importJson(JsonParserService.getSampleJson());
-                if (context.mounted && imported != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${imported.displayName} imported')),
-                  );
-                }
+                if (!context.mounted) return;
+                final libraryProvider = context.read<TestLibraryProvider>();
+                final duplicate = libraryProvider.duplicateExam;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      imported == null
+                          ? libraryProvider.error ?? 'Import failed'
+                          : '${imported.displayName} imported',
+                    ),
+                    action: duplicate == null
+                        ? null
+                        : SnackBarAction(
+                            label: 'Open',
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ExamDetailScreen(testId: duplicate.id),
+                              ),
+                            ),
+                          ),
+                  ),
+                );
               },
             ),
           ],
@@ -253,8 +271,23 @@ class _QuickActions extends StatelessWidget {
       final imported = await libraryProvider.importJson(content);
       if (!context.mounted) return;
       if (imported == null) {
+        final duplicate = libraryProvider.duplicateExam;
         messenger.showSnackBar(
-          SnackBar(content: Text(libraryProvider.error ?? 'Import failed')),
+          SnackBar(
+            content: Text(libraryProvider.error ?? 'Import failed'),
+            action: duplicate == null
+                ? null
+                : SnackBarAction(
+                    label: 'Open',
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ExamDetailScreen(testId: duplicate.id),
+                      ),
+                    ),
+                  ),
+          ),
         );
         return;
       }
@@ -272,14 +305,14 @@ class _QuickActions extends StatelessWidget {
   }
 }
 
-class _RecentTests extends StatelessWidget {
-  final List<ImportedTest> tests;
+class _RecentExams extends StatelessWidget {
+  final List<ImportedTest> exams;
 
-  const _RecentTests({required this.tests});
+  const _RecentExams({required this.exams});
 
   @override
   Widget build(BuildContext context) {
-    if (tests.isEmpty) {
+    if (exams.isEmpty) {
       return const Card(
         child: Padding(
           padding: EdgeInsets.all(20),
@@ -289,11 +322,11 @@ class _RecentTests extends StatelessWidget {
               Icon(Icons.inventory_2_outlined, color: AppColors.lightNavy),
               SizedBox(height: 10),
               Text(
-                'No tests yet',
+                'No exams yet',
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
               ),
               SizedBox(height: 4),
-              Text('Import a JSON test to start studying.'),
+              Text('Import a JSON exam to start studying.'),
             ],
           ),
         ),
@@ -307,13 +340,13 @@ class _RecentTests extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Recent tests',
+              'Recent exams',
               style: Theme.of(
                 context,
               ).textTheme.headlineMedium?.copyWith(fontSize: 18),
             ),
             const SizedBox(height: 8),
-            ...tests
+            ...exams
                 .take(3)
                 .map(
                   (item) => ListTile(
@@ -325,7 +358,7 @@ class _RecentTests extends StatelessWidget {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => TestDetailScreen(testId: item.id),
+                        builder: (context) => ExamDetailScreen(testId: item.id),
                       ),
                     ),
                   ),

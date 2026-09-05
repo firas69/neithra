@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => HistoryProvider()),
       ],
       child: MaterialApp(
-        title: 'Neithra Practice',
+        title: 'Neithra',
         theme: AppTheme.theme,
         home: const AppBootstrap(),
         debugShowCheckedModeBanner: false,

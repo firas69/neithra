@@ -1,9 +1,9 @@
-# Test Definition Schema
+# Exam Definition Schema
 
 Neithra loads assessments from JSON. The schema is intentionally permissive enough for
-generated tests while still validating the fields needed for rendering and scoring.
+generated exams while still validating the fields needed for rendering and scoring.
 
-## Test-Level Fields
+## Exam-Level Fields
 
 Required:
 
@@ -15,7 +15,7 @@ Recommended:
 - `topic`
 - `description`
 - `version`
-- `test_mode`: `practice`, `exam`, or `weakness_practice`
+- `test_mode`: legacy-compatible field; current app sessions start as exams
 - `difficulty`: `foundation`, `intermediate`, `advanced`, or `mixed`
 - `estimated_duration`: minutes
 - `categories`
@@ -90,7 +90,7 @@ Small example:
 {
   "title": "Composer Basics",
   "topic": "PHP tooling",
-  "test_mode": "practice",
+  "test_mode": "exam",
   "questions": [
     {
       "id": "C001",

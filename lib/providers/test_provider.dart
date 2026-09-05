@@ -49,38 +49,6 @@ class TestProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  TestModel? createWeaknessPractice(List<String> categories) {
-    if (_currentTest == null || categories.isEmpty) return _currentTest;
-
-    final selected = _currentTest!.questions.where((question) {
-      final category = question.category ?? question.topic ?? 'General';
-      return categories.contains(category);
-    }).toList();
-
-    if (selected.isEmpty) return _currentTest;
-
-    return TestModel(
-      id: '${_currentTest!.id}-weakness',
-      title: '${_currentTest!.title} - Weakness Practice',
-      topic: _currentTest!.topic,
-      description: 'Focused practice from your lowest-scoring categories.',
-      version: _currentTest!.version,
-      defaultMode: TestMode.weaknessPractice,
-      difficulty: _currentTest!.difficulty,
-      estimatedDuration: _currentTest!.estimatedDuration,
-      categories: categories,
-      scoringRules: _currentTest!.scoringRules,
-      passingScore: _currentTest!.passingScore,
-      selectionConfig: {
-        ..._currentTest!.selectionConfig,
-        'source': 'weaknessPractice',
-      },
-      shuffleAnswers: _currentTest!.shuffleAnswers,
-      shuffleQuestions: true,
-      questions: selected,
-    );
-  }
-
   void clearTest() async {
     _currentTest = null;
     await _fileDbService.clearTestData();

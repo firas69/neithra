@@ -12,7 +12,7 @@ class HistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('History')),
+      appBar: AppBar(title: const Text('Exam History')),
       body: SafeArea(
         child: Consumer<HistoryProvider>(
           builder: (context, historyProvider, child) {
@@ -111,11 +111,11 @@ class _EmptyHistory extends StatelessWidget {
             Icon(Icons.history_outlined, color: AppColors.lightNavy),
             SizedBox(height: 12),
             Text(
-              'No test history yet',
+              'No exam history yet',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
             ),
             SizedBox(height: 4),
-            Text('Completed tests will appear here.'),
+            Text('Completed exams will appear here.'),
           ],
         ),
       ),

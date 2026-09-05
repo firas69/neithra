@@ -2,23 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/constants/app_colors.dart';
-import '../models/test_model.dart';
+import '../models/imported_test_model.dart';
 import '../providers/test_library_provider.dart';
 import '../providers/test_provider.dart';
-import 'practice_screen.dart';
+import 'exam_screen.dart';
 
-class TestDetailScreen extends StatelessWidget {
+class ExamDetailScreen extends StatelessWidget {
   final String testId;
 
-  const TestDetailScreen({super.key, required this.testId});
+  const ExamDetailScreen({super.key, required this.testId});
 
   @override
   Widget build(BuildContext context) {
     final importedTest = context.watch<TestLibraryProvider>().findById(testId);
     if (importedTest == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Test')),
-        body: const Center(child: Text('This test could not be found.')),
+        appBar: AppBar(title: const Text('Exam')),
+        body: const Center(child: Text('This exam could not be found.')),
       );
     }
 
@@ -69,15 +69,8 @@ class TestDetailScreen extends StatelessWidget {
                         const SizedBox(height: 20),
                         FilledButton.icon(
                           icon: const Icon(Icons.play_arrow),
-                          label: const Text('Start Practice'),
-                          onPressed: () =>
-                              _start(context, test, TestMode.practice),
-                        ),
-                        const SizedBox(height: 10),
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.assignment_outlined),
                           label: const Text('Start Exam'),
-                          onPressed: () => _start(context, test, TestMode.exam),
+                          onPressed: () => _start(context, importedTest),
                         ),
                       ],
                     ),
@@ -91,11 +84,13 @@ class TestDetailScreen extends StatelessWidget {
     );
   }
 
-  void _start(BuildContext context, TestModel test, TestMode mode) {
-    context.read<TestProvider>().setCurrentTest(test);
+  void _start(BuildContext context, ImportedTest importedTest) {
+    context.read<TestProvider>().setCurrentTest(
+      importedTest.test.copyWith(title: importedTest.displayName),
+    );
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => PracticeScreen(mode: mode)),
+      MaterialPageRoute(builder: (context) => const ExamScreen()),
     );
   }
 }

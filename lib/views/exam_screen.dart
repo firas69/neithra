@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../core/constants/app_colors.dart';
 import '../models/answer_value_model.dart';
-import '../models/test_model.dart';
 import '../providers/session_provider.dart';
 import '../providers/test_provider.dart';
 import '../widgets/answer_input_widget.dart';
@@ -11,17 +10,16 @@ import '../widgets/question_widget.dart';
 import '../widgets/timer_widget.dart';
 import 'results_screen.dart';
 
-class PracticeScreen extends StatefulWidget {
+class ExamScreen extends StatefulWidget {
   final String? resumeSessionId;
-  final TestMode? mode;
 
-  const PracticeScreen({super.key, this.resumeSessionId, this.mode});
+  const ExamScreen({super.key, this.resumeSessionId});
 
   @override
-  State<PracticeScreen> createState() => _PracticeScreenState();
+  State<ExamScreen> createState() => _ExamScreenState();
 }
 
-class _PracticeScreenState extends State<PracticeScreen> {
+class _ExamScreenState extends State<ExamScreen> {
   AnswerValue _currentAnswer = const AnswerValue.empty();
   bool _isStarting = true;
   String? _startupError;
@@ -41,17 +39,14 @@ class _PracticeScreenState extends State<PracticeScreen> {
         widget.resumeSessionId!,
       );
       if (!resumed) {
-        _startupError = 'Saved session could not be restored.';
+        _startupError = 'Saved exam session could not be restored.';
       } else if (sessionProvider.test != null) {
         testProvider.setCurrentTest(sessionProvider.test!);
       }
     } else if (testProvider.currentTest != null) {
-      await sessionProvider.startSession(
-        testProvider.currentTest!,
-        mode: widget.mode,
-      );
+      await sessionProvider.startSession(testProvider.currentTest!);
     } else {
-      _startupError = 'No test is loaded.';
+      _startupError = 'No exam is loaded.';
     }
 
     _loadCurrentAnswer();
@@ -78,12 +73,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
       child: Scaffold(
         backgroundColor: AppColors.lightGray,
         appBar: AppBar(
-          title: Consumer<SessionProvider>(
-            builder: (context, sessionProvider, child) {
-              final modeLabel = _modeLabel(sessionProvider.mode);
-              return Text(modeLabel);
-            },
-          ),
+          title: const Text('Exam'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: _pauseAndExit,
@@ -109,6 +99,16 @@ class _PracticeScreenState extends State<PracticeScreen> {
           ],
         ),
         body: _buildBody(),
+        bottomNavigationBar: _isStarting || _startupError != null
+            ? null
+            : Consumer<SessionProvider>(
+                builder: (context, sessionProvider, child) {
+                  if (sessionProvider.currentQuestion == null) {
+                    return const SizedBox.shrink();
+                  }
+                  return _buildBottomActions(sessionProvider);
+                },
+              ),
       ),
     );
   }
@@ -170,7 +170,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
           children: [
             Expanded(
               child: Text(
-                sessionProvider.test?.title ?? 'Practice Session',
+                sessionProvider.test?.title ?? 'Exam Session',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.darkGray.withValues(alpha: 0.75),
                   fontWeight: FontWeight.w600,
@@ -208,10 +208,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
 
   Widget _buildAnswerPanel(SessionProvider sessionProvider) {
     final question = sessionProvider.currentQuestion!;
-    final revealFeedback =
-        sessionProvider.mode == TestMode.practice ||
-        sessionProvider.mode == TestMode.weaknessPractice;
-
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -226,14 +222,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
             AnswerInputWidget(
               question: question,
               initialValue: _currentAnswer,
-              revealPracticeFeedback: revealFeedback,
+              revealAnswerFeedback: false,
               onAnswerChanged: (answer) async {
                 _currentAnswer = answer;
                 await sessionProvider.saveAnswer(answer);
               },
             ),
-            const SizedBox(height: 20),
-            _buildBottomActions(sessionProvider),
           ],
         ),
       ),
@@ -307,30 +301,48 @@ class _PracticeScreenState extends State<PracticeScreen> {
   Widget _buildBottomActions(SessionProvider sessionProvider) {
     final canGoBack = sessionProvider.currentQuestionIndex > 0;
 
-    return Row(
-      children: [
-        IconButton.filledTonal(
-          tooltip: 'Previous',
-          icon: const Icon(Icons.arrow_back),
-          onPressed: canGoBack
-              ? () => _previousQuestion(sessionProvider)
-              : null,
-        ),
-        const SizedBox(width: 8),
-        TextButton.icon(
-          icon: const Icon(Icons.pause),
-          label: const Text('Pause'),
-          onPressed: _pauseAndExit,
-        ),
-        const Spacer(),
-        FilledButton.icon(
-          icon: Icon(
-            sessionProvider.isLastQuestion ? Icons.check : Icons.arrow_forward,
+    return Material(
+      color: AppColors.white,
+      elevation: 8,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.arrow_back),
+                  label: const Text('Previous'),
+                  onPressed: canGoBack
+                      ? () => _previousQuestion(sessionProvider)
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 10),
+              IconButton(
+                tooltip: 'Pause',
+                icon: const Icon(Icons.pause_circle_outline),
+                onPressed: _pauseAndExit,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FilledButton.icon(
+                  icon: Icon(
+                    sessionProvider.isLastQuestion
+                        ? Icons.check
+                        : Icons.arrow_forward,
+                  ),
+                  label: Text(
+                    sessionProvider.isLastQuestion ? 'Submit Exam' : 'Next',
+                  ),
+                  onPressed: () => _proceed(sessionProvider),
+                ),
+              ),
+            ],
           ),
-          label: Text(sessionProvider.isLastQuestion ? 'Finish' : 'Next'),
-          onPressed: () => _proceed(sessionProvider),
         ),
-      ],
+      ),
     );
   }
 
@@ -372,18 +384,19 @@ class _PracticeScreenState extends State<PracticeScreen> {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Finish session?'),
+        title: const Text('Submit exam?'),
         content: Text(
+          '${sessionProvider.answeredCount} answered. '
           '$unanswered question${unanswered == 1 ? '' : 's'} unanswered.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep working'),
+            child: const Text('Keep answering'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Finish'),
+            child: const Text('Submit'),
           ),
         ],
       ),
@@ -398,17 +411,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
     ).showSnackBar(const SnackBar(content: Text('Progress saved.')));
     Navigator.of(context).pop();
   }
-
-  String _modeLabel(TestMode mode) {
-    switch (mode) {
-      case TestMode.practice:
-        return 'Practice';
-      case TestMode.exam:
-        return 'Exam';
-      case TestMode.weaknessPractice:
-        return 'Weakness Practice';
-    }
-  }
 }
 
 class _QuestionSurface extends StatelessWidget {
@@ -419,7 +421,7 @@ class _QuestionSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 920),

@@ -12,7 +12,7 @@ secrets are intentionally ignored by Git.
 
 ## Android Package
 
-- Application ID: `com.neithra.practice`
+- Application ID: `com.neithra.exam`
 - App label: `Neithra`
 
 ## Local Signing Setup

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'history_screen.dart';
 import 'home_dashboard_screen.dart';
 import 'profile_screen.dart';
-import 'tests_screen.dart';
+import 'exams_screen.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -22,7 +22,7 @@ class _AppShellState extends State<AppShell> {
         index: _selectedIndex,
         children: const [
           HomeDashboardScreen(),
-          TestsScreen(),
+          ExamsScreen(),
           HistoryScreen(),
           ProfileScreen(),
         ],
@@ -41,7 +41,7 @@ class _AppShellState extends State<AppShell> {
           NavigationDestination(
             icon: Icon(Icons.quiz_outlined),
             selectedIcon: Icon(Icons.quiz),
-            label: 'Tests',
+            label: 'Exams',
           ),
           NavigationDestination(
             icon: Icon(Icons.history_outlined),

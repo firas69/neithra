@@ -4,6 +4,7 @@ class ImportedTest {
   final String id;
   final String displayName;
   final TestModel test;
+  final String contentHash;
   final DateTime importedAt;
   final DateTime updatedAt;
   final DateTime? lastAttemptAt;
@@ -14,6 +15,7 @@ class ImportedTest {
     required this.id,
     required this.displayName,
     required this.test,
+    required this.contentHash,
     required this.importedAt,
     required this.updatedAt,
     this.lastAttemptAt,
@@ -21,16 +23,17 @@ class ImportedTest {
     this.bestScore,
   });
 
-  factory ImportedTest.fromParsedTest(TestModel test) {
+  factory ImportedTest.fromParsedTest(TestModel test, String contentHash) {
     final now = DateTime.now();
     final id = 'test-${now.microsecondsSinceEpoch}';
     final name = test.title.trim().isEmpty
-        ? 'Untitled Test'
+        ? 'Untitled Exam'
         : test.title.trim();
     return ImportedTest(
       id: id,
       displayName: name,
-      test: test.copyWith(id: id, title: name),
+      test: test.copyWith(id: id),
+      contentHash: contentHash,
       importedAt: now,
       updatedAt: now,
     );
@@ -45,8 +48,9 @@ class ImportedTest {
 
     return ImportedTest(
       id: id,
-      displayName: displayName.isEmpty ? 'Untitled Test' : displayName,
-      test: test.copyWith(id: id, title: displayName),
+      displayName: displayName.isEmpty ? 'Untitled Exam' : displayName,
+      test: test.copyWith(id: id),
+      contentHash: json['contentHash']?.toString() ?? '',
       importedAt:
           DateTime.tryParse(json['importedAt']?.toString() ?? '') ??
           DateTime.now(),
@@ -65,12 +69,14 @@ class ImportedTest {
     DateTime? lastAttemptAt,
     int? attemptsCount,
     double? bestScore,
+    String? contentHash,
   }) {
     final nextName = displayName?.trim() ?? this.displayName;
     return ImportedTest(
       id: id,
       displayName: nextName,
-      test: test.copyWith(id: id, title: nextName),
+      test: test.copyWith(id: id),
+      contentHash: contentHash ?? this.contentHash,
       importedAt: importedAt,
       updatedAt: updatedAt ?? this.updatedAt,
       lastAttemptAt: lastAttemptAt ?? this.lastAttemptAt,
@@ -83,7 +89,8 @@ class ImportedTest {
     return {
       'id': id,
       'displayName': displayName,
-      'test': test.copyWith(id: id, title: displayName).toJson(),
+      'test': test.copyWith(id: id).toJson(),
+      'contentHash': contentHash,
       'importedAt': importedAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       if (lastAttemptAt != null)

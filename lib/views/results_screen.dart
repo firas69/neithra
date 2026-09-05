@@ -6,14 +6,11 @@ import '../models/answer_value_model.dart';
 import '../models/question_model.dart';
 import '../models/result_model.dart';
 import '../models/test_attempt_model.dart';
-import '../models/test_model.dart';
 import '../providers/history_provider.dart';
 import '../providers/result_provider.dart';
 import '../providers/session_provider.dart';
 import '../providers/test_library_provider.dart';
-import '../providers/test_provider.dart';
 import 'app_shell.dart';
-import 'practice_screen.dart';
 
 class ResultsScreen extends StatefulWidget {
   final Duration? timeTaken;
@@ -67,7 +64,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Review'),
+        title: const Text('Exam Result'),
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
@@ -207,10 +204,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
                 ),
               ),
             const SizedBox(height: 20),
-            FilledButton.icon(
-              icon: const Icon(Icons.fitness_center),
-              label: const Text('Practice Weaknesses'),
-              onPressed: () => _startWeaknessPractice(result),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.history),
+              label: const Text('Saved to History'),
+              onPressed: null,
             ),
           ],
         ),
@@ -276,24 +273,6 @@ class _ResultsScreenState extends State<ResultsScreen> {
           ),
         );
       }).toList(),
-    );
-  }
-
-  void _startWeaknessPractice(ResultModel result) {
-    final categories = result.weakestCategories
-        .map((entry) => entry.key)
-        .toList();
-    final testProvider = context.read<TestProvider>();
-    final weaknessTest = testProvider.createWeaknessPractice(categories);
-    if (weaknessTest == null) return;
-
-    testProvider.setCurrentTest(weaknessTest);
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            const PracticeScreen(mode: TestMode.weaknessPractice),
-      ),
     );
   }
 

@@ -103,9 +103,9 @@ class JsonParserService {
 {
   "title": "Symfony Learning Sprint",
   "topic": "Symfony fundamentals",
-  "description": "Focused practice across Composer, HttpFoundation, DI, routing, Twig, and controller design.",
+  "description": "Focused exam across Composer, HttpFoundation, DI, routing, Twig, and controller design.",
   "version": "2.0",
-  "test_mode": "practice",
+  "test_mode": "exam",
   "difficulty": "intermediate",
   "estimated_duration": 18,
   "categories": ["Composer", "Architecture", "Routing", "Dependency Injection"],

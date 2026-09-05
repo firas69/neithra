@@ -1,30 +1,31 @@
 # Neithra
 
-Neithra is a Flutter learning and assessment app for structured practice sessions.
-It turns JSON-based test definitions into a focused workflow:
+Neithra is a Flutter learning and assessment app for structured exam sessions.
+It turns JSON-based exam definitions into a focused workflow:
 
-`Create profile -> Import tests -> Practice -> Pause -> Resume -> Complete -> Review history`
+`Create profile -> Import exams -> Start exam -> Pause -> Resume -> Submit -> Review history`
 
-The project is intentionally local-first. Tests and in-progress sessions are persisted on
-device with SQLite, while the optional remote history service is disabled unless a backend
-URL is provided at build time.
+The project is intentionally local-first. Exams, in-progress sessions, profile data, and
+attempt history are persisted on device with SQLite, while the optional remote history
+service is disabled unless a backend URL is provided at build time.
 
 ## Highlights
 
-- Focused practice and exam modes with responsive phone/tablet layouts.
+- Focused exam sessions with responsive phone/tablet layouts.
 - First-launch username setup with an editable local profile.
-- Persistent bottom navigation for Home, Tests, History, and Profile.
-- Internal test library with stable test IDs, friendly display names, search, and rename.
+- Persistent bottom navigation for Home, Exams, History, and Profile.
+- Internal exam library with stable IDs, friendly display names, search, rename, and
+  SHA-256 duplicate protection based on canonical exam content.
 - Durable pause/resume sessions that survive app restarts.
 - Immutable completed-attempt history with question-by-question snapshots.
-- Activity streak based on local calendar days with completed tests.
+- Activity streak based on local calendar days with completed exams.
 - Rich question model with scoring, metadata, explanations, hints, skills, categories,
   estimated time, points, and optional negative marking.
 - Extensible answer rendering for single choice, multiple answer, true/false, short answer,
   fill in the blank, matching, ordering, numerical, scenario, code, and self-evaluated
   questions.
-- Review screen with score, points, manual-review count, category performance, and weakness
-  practice generation.
+- Review screen with score, points, manual-review count, category performance, and
+  persisted history review.
 - Clean Provider-based state management with local file and SQLite persistence.
 
 ## Screens
@@ -32,11 +33,11 @@ URL is provided at build time.
 Current main surfaces:
 
 - `AppShell`: persistent bottom navigation using an `IndexedStack`.
-- `HomeDashboardScreen`: greeting, quick import, recent tests, and resume card.
-- `TestsScreen`: searchable imported test library with rename actions.
+- `HomeDashboardScreen`: greeting, quick import, recent exams, and resume card.
+- `ExamsScreen`: searchable imported exam library with rename actions.
 - `HistoryScreen`: completed attempts, newest first.
 - `ProfileScreen`: username editing, activity streak, and activity summary.
-- `PracticeScreen`: focused answering UI, question map, elapsed time, flags, pause/save.
+- `ExamScreen`: focused answering UI, question map, elapsed time, flags, pause/save.
 - `ResultsScreen`: review answers, explanations, scoring details, weakest categories.
 
 ## Project Structure
@@ -44,14 +45,14 @@ Current main surfaces:
 ```text
 lib/
   core/                 Theme, constants, small utilities
-  models/               Profile, imported test, test, question, answer, session, attempt
+  models/               Profile, imported exam, exam definition, question, answer, session, attempt
   providers/            Provider state for profile, library, sessions, results, history
   services/             JSON parsing, local file storage, SQLite, optional remote history
-  views/                App shell, tabs, detail screens, active test, results
-  widgets/              Reusable test-taking and answer-rendering widgets
+  views/                App shell, tabs, detail screens, active exam, results
+  widgets/              Reusable exam-taking and answer-rendering widgets
 docs/                   Architecture, schema, release, and reviewer notes
-samples/                Example test definitions
-test/                   Focused parser/scoring tests
+samples/                Example exam definitions
+test/                   Focused parser, scoring, fingerprint, and answer-state tests
 ```
 
 See [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for a reviewer-oriented map.
@@ -73,7 +74,7 @@ flutter run
 ```
 
 Import `samples/symfony_learning_sprint.json` from the app, or use the built-in sample
-action on Home.
+exam action on Home.
 
 ## Build Android APK
 

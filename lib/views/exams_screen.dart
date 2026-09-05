@@ -8,16 +8,16 @@ import 'package:provider/provider.dart';
 import '../core/constants/app_colors.dart';
 import '../models/imported_test_model.dart';
 import '../providers/test_library_provider.dart';
-import 'test_detail_screen.dart';
+import 'exam_detail_screen.dart';
 
-class TestsScreen extends StatelessWidget {
-  const TestsScreen({super.key});
+class ExamsScreen extends StatelessWidget {
+  const ExamsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tests'),
+        title: const Text('Exams'),
         actions: [
           IconButton(
             tooltip: 'Import',
@@ -44,14 +44,14 @@ class TestsScreen extends StatelessWidget {
                           TextField(
                             decoration: const InputDecoration(
                               prefixIcon: Icon(Icons.search),
-                              hintText: 'Search imported tests',
+                              hintText: 'Search imported exams',
                             ),
                             onChanged: libraryProvider.updateSearchQuery,
                           ),
                           const SizedBox(height: 14),
                           FilledButton.icon(
                             icon: const Icon(Icons.upload_file),
-                            label: const Text('Import JSON Test'),
+                            label: const Text('Import JSON Exam'),
                             onPressed: libraryProvider.isLoading
                                 ? null
                                 : () => _importFromFile(context),
@@ -62,7 +62,7 @@ class TestsScreen extends StatelessWidget {
                           ],
                           const SizedBox(height: 16),
                           if (libraryProvider.tests.isEmpty)
-                            const _EmptyTests()
+                            const _EmptyExams()
                           else if (tests.isEmpty)
                             const _EmptySearch()
                           else
@@ -97,6 +97,7 @@ class TestsScreen extends StatelessWidget {
           : await File(file.path!).readAsString();
       final imported = await libraryProvider.importJson(content);
       if (!context.mounted) return;
+      final duplicate = libraryProvider.duplicateExam;
       messenger.showSnackBar(
         SnackBar(
           content: Text(
@@ -104,6 +105,18 @@ class TestsScreen extends StatelessWidget {
                 ? libraryProvider.error ?? 'Import failed'
                 : '${imported.displayName} imported',
           ),
+          action: duplicate == null
+              ? null
+              : SnackBarAction(
+                  label: 'Open',
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          ExamDetailScreen(testId: duplicate.id),
+                    ),
+                  ),
+                ),
         ),
       );
     } catch (e) {
@@ -131,7 +144,7 @@ class _TestCard extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => TestDetailScreen(testId: test.id),
+            builder: (context) => ExamDetailScreen(testId: test.id),
           ),
         ),
         onLongPress: () => _showRenameDialog(context),
@@ -153,7 +166,7 @@ class _TestCard extends StatelessWidget {
                     ),
                   ),
                   PopupMenuButton<String>(
-                    tooltip: 'Test actions',
+                    tooltip: 'Exam actions',
                     onSelected: (value) {
                       if (value == 'rename') _showRenameDialog(context);
                     },
@@ -197,7 +210,7 @@ class _TestCard extends StatelessWidget {
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Rename test'),
+        title: const Text('Rename exam'),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -229,7 +242,7 @@ class _TestCard extends StatelessWidget {
         SnackBar(
           content: Text(
             context.read<TestLibraryProvider>().error ??
-                'The test name could not be saved.',
+                'The exam name could not be saved.',
           ),
         ),
       );
@@ -248,8 +261,8 @@ class _InfoChip extends StatelessWidget {
   }
 }
 
-class _EmptyTests extends StatelessWidget {
-  const _EmptyTests();
+class _EmptyExams extends StatelessWidget {
+  const _EmptyExams();
 
   @override
   Widget build(BuildContext context) {
@@ -262,11 +275,11 @@ class _EmptyTests extends StatelessWidget {
             Icon(Icons.inventory_2_outlined, color: AppColors.lightNavy),
             SizedBox(height: 12),
             Text(
-              'No tests yet',
+              'No exams yet',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
             ),
             SizedBox(height: 4),
-            Text('Import a JSON test to start studying.'),
+            Text('Import a JSON exam to start studying.'),
           ],
         ),
       ),
@@ -282,7 +295,7 @@ class _EmptySearch extends StatelessWidget {
     return const Card(
       child: Padding(
         padding: EdgeInsets.all(24),
-        child: Text('No tests match your search.'),
+        child: Text('No exams match your search.'),
       ),
     );
   }

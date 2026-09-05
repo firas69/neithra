@@ -20,7 +20,7 @@ class SessionProvider with ChangeNotifier {
   DateTime? _lastQuestionStartedAt;
   Duration _elapsedBeforeCurrentRun = Duration.zero;
   bool _isSessionActive = false;
-  TestMode _mode = TestMode.practice;
+  TestMode _mode = TestMode.exam;
   SessionStatus _status = SessionStatus.paused;
   List<SessionSummary> _savedSessions = [];
 
@@ -56,7 +56,7 @@ class SessionProvider with ChangeNotifier {
     List<Question>? questions,
   }) async {
     _sessionId = DateTime.now().millisecondsSinceEpoch.toString();
-    _mode = mode ?? test.defaultMode;
+    _mode = mode ?? TestMode.exam;
     _questions = questions ?? _prepareQuestions(test);
     _test = test.copyWith(questions: _questions);
     _currentQuestionIndex = 0;
@@ -188,6 +188,7 @@ class SessionProvider with ChangeNotifier {
     _currentRunStartedAt = null;
     _isSessionActive = false;
     _status = SessionStatus.paused;
+    _mode = TestMode.exam;
     await persistSession(notify: false);
     await loadSavedSessions();
   }

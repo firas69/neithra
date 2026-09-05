@@ -8,14 +8,14 @@ class AnswerInputWidget extends StatefulWidget {
   final Question question;
   final AnswerValue initialValue;
   final ValueChanged<AnswerValue> onAnswerChanged;
-  final bool revealPracticeFeedback;
+  final bool revealAnswerFeedback;
 
   const AnswerInputWidget({
     super.key,
     required this.question,
     required this.initialValue,
     required this.onAnswerChanged,
-    this.revealPracticeFeedback = false,
+    this.revealAnswerFeedback = false,
   });
 
   @override
@@ -49,14 +49,6 @@ class _AnswerInputWidgetState extends State<AnswerInputWidget> {
     _orderedItems = widget.initialValue.orderedItems.isNotEmpty
         ? [...widget.initialValue.orderedItems]
         : _defaultOrderItems();
-    if (widget.question.type == QuestionType.ordering &&
-        !_answer.isAnswered &&
-        _orderedItems.isNotEmpty) {
-      _answer = AnswerValue.ordering(_orderedItems);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) widget.onAnswerChanged(_answer);
-      });
-    }
   }
 
   @override
@@ -66,9 +58,9 @@ class _AnswerInputWidgetState extends State<AnswerInputWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildInputWidget(),
-        if (widget.revealPracticeFeedback && _answer.isAnswered) ...[
+        if (widget.revealAnswerFeedback && _answer.isAnswered) ...[
           const SizedBox(height: 12),
-          _buildPracticeFeedback(),
+          _buildAnswerFeedback(),
         ],
       ],
     );
@@ -111,12 +103,12 @@ class _AnswerInputWidgetState extends State<AnswerInputWidget> {
         final index = entry.key;
         final selected = _answer.selectedIndex == index;
         final correct = _isSingleCorrectIndex(index);
-        final incorrect = widget.revealPracticeFeedback && selected && !correct;
+        final incorrect = widget.revealAnswerFeedback && selected && !correct;
 
         return _OptionCard(
           label: entry.value,
           selected: selected,
-          correct: widget.revealPracticeFeedback && correct,
+          correct: widget.revealAnswerFeedback && correct,
           incorrect: incorrect,
           leading: selected
               ? Icons.radio_button_checked
@@ -135,13 +127,12 @@ class _AnswerInputWidgetState extends State<AnswerInputWidget> {
         final option = entry.value;
         final isSelected = selected.contains(index);
         final correct = _isMultipleCorrectIndex(index);
-        final incorrect =
-            widget.revealPracticeFeedback && isSelected && !correct;
+        final incorrect = widget.revealAnswerFeedback && isSelected && !correct;
 
         return _OptionCard(
           label: option,
           selected: isSelected,
-          correct: widget.revealPracticeFeedback && correct,
+          correct: widget.revealAnswerFeedback && correct,
           incorrect: incorrect,
           leading: isSelected ? Icons.check_box : Icons.check_box_outline_blank,
           onTap: () {
@@ -166,8 +157,8 @@ class _AnswerInputWidgetState extends State<AnswerInputWidget> {
         return _OptionCard(
           label: value ? 'True' : 'False',
           selected: selected,
-          correct: widget.revealPracticeFeedback && correct,
-          incorrect: widget.revealPracticeFeedback && selected && !correct,
+          correct: widget.revealAnswerFeedback && correct,
+          incorrect: widget.revealAnswerFeedback && selected && !correct,
           leading: selected
               ? Icons.radio_button_checked
               : Icons.radio_button_unchecked,
@@ -321,7 +312,7 @@ class _AnswerInputWidgetState extends State<AnswerInputWidget> {
     );
   }
 
-  Widget _buildPracticeFeedback() {
+  Widget _buildAnswerFeedback() {
     final score = widget.question.scoreAnswer(_answer);
     final color = score.isCorrect ? AppColors.green : AppColors.red;
     final label = score.needsManualReview

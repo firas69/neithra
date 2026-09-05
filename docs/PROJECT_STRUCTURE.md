@@ -32,19 +32,19 @@ lib/
   services/
     api/                Optional remote history integration
     database/           Local file persistence and SQLite
+    exam_fingerprint_service.dart
     json_parser_service.dart
   views/
     app_bootstrap.dart
     app_shell.dart
     home_dashboard_screen.dart
-    tests_screen.dart
-    test_detail_screen.dart
+    exams_screen.dart
+    exam_detail_screen.dart
     history_screen.dart
     history_detail_screen.dart
     profile_screen.dart
     username_onboarding_screen.dart
-    upload_screen.dart
-    practice_screen.dart
+    exam_screen.dart
     results_screen.dart
   widgets/
     answer_input_widget.dart
@@ -56,7 +56,7 @@ lib/
 ## App Flow
 
 ```text
-JSON test definition
+JSON exam definition
   -> JsonParserService
   -> TestModel / Question models
   -> ImportedTest / TestLibraryProvider
@@ -72,9 +72,9 @@ JSON test definition
 The app uses `provider` for simple, explicit state ownership:
 
 - `ProfileProvider`: first-launch username and profile edits.
-- `TestLibraryProvider`: imported tests, search state, test import, and rename.
-- `TestProvider`: current test handoff into the active practice screen and
-  weakness-practice selection.
+- `TestLibraryProvider`: imported exams, search state, duplicate-safe import, and rename.
+- `TestProvider`: current exam handoff into the active exam screen. The name is retained
+  internally for compatibility with the existing JSON/session model.
 - `SessionProvider`: active session, current question, answers, flags, elapsed time,
   per-question timing, pause/resume snapshots.
 - `ResultProvider`: scoring, category analytics, and optional remote history persistence.
@@ -82,13 +82,15 @@ The app uses `provider` for simple, explicit state ownership:
 
 ## Persistence
 
-- `FileDbService` remains for backward-compatible current-test storage.
-- `SqliteService` stores the profile, imported test library, resumable session snapshots,
+- `FileDbService` remains for backward-compatible current-definition storage.
+- `SqliteService` stores the profile, imported exam library, resumable session snapshots,
   response history, and completed attempts.
 - A session snapshot includes the concrete question order, current index, answers,
   flags, elapsed time, per-question timing, mode, and status.
-- A completed attempt stores test name, score, elapsed time, completion date, and
-  question-by-question review data independently from the current imported test.
+- A completed attempt stores exam name, score, elapsed time, completion date, and
+  question-by-question review data independently from the current imported exam.
+- Imported exams store a canonical SHA-256 `contentHash` so semantically identical JSON
+  is rejected even if formatting or file names differ.
 
 ## Question Rendering
 
@@ -116,4 +118,4 @@ Supported types:
 - Add the answer shape in `answer_value_model.dart`.
 - Add focused rendering in `answer_input_widget.dart`.
 - Extend `JsonParserService` validation if the type has required fields.
-- Add tests for parser and scoring behavior.
+- Add tests for parser, scoring, fingerprinting, and answer-state behavior.
