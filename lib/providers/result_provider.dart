@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/answer_value_model.dart';
 import '../models/question_model.dart';
 import '../models/result_model.dart';
-import '../services/api/mysql_service.dart';
+import '../services/api/remote_history_service.dart';
 
 class ResultProvider with ChangeNotifier {
   ResultModel? _currentResult;
@@ -14,7 +14,7 @@ class ResultProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  final MySqlService _mySqlService = MySqlService();
+  final RemoteHistoryService _remoteHistoryService = RemoteHistoryService();
 
   Future<void> calculateResult({
     required String sessionId,
@@ -74,7 +74,7 @@ class ResultProvider with ChangeNotifier {
 
   Future<void> _saveToRemoteHistory(ResultModel result) async {
     try {
-      await _mySqlService.saveTestHistory(result);
+      await _remoteHistoryService.saveTestHistory(result);
     } catch (e) {
       debugPrint('Failed to save to remote history: $e');
     }

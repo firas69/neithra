@@ -1,5 +1,5 @@
 class AppStrings {
-  static const String appName = 'Quiz App';
+  static const String appName = 'Neithra';
   static const String uploadJson = 'Upload File';
   static const String pasteJson = 'Paste JSON Content';
   static const String startPractice = 'Start Practice';

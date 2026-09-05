@@ -1,0 +1,137 @@
+{
+  "title": "Symfony Learning Sprint",
+  "topic": "Symfony fundamentals",
+  "description": "Focused practice across Composer, HttpFoundation, DI, routing, Twig, and controller design.",
+  "version": "2.0",
+  "test_mode": "practice",
+  "difficulty": "intermediate",
+  "estimated_duration": 18,
+  "categories": ["Composer", "Architecture", "Routing", "Dependency Injection"],
+  "shuffle_questions": false,
+  "shuffle_answers": false,
+  "passing_score": 70,
+  "questions": [
+    {
+      "id": "S001",
+      "type": "single_choice",
+      "question": "Which file defines autoloading rules in a Composer project?",
+      "options": ["autoload.php", "composer.json", "composer.lock", "index.php"],
+      "correct_answer": 1,
+      "explanation": "Composer reads autoload rules from composer.json, then generates vendor/autoload.php.",
+      "difficulty": "foundation",
+      "category": "Composer",
+      "skills": ["autoloading"],
+      "estimated_time": 45,
+      "points": 1
+    },
+    {
+      "id": "S002",
+      "type": "multiple_choice",
+      "question": "Which statements are true about Symfony controllers?",
+      "options": [
+        "They can return Response objects",
+        "They should contain all database schema definitions",
+        "They coordinate request handling",
+        "They can receive services through dependency injection"
+      ],
+      "correct_answers": [0, 2, 3],
+      "explanation": "Controllers coordinate request handling and return responses; dependencies can be injected.",
+      "category": "Architecture",
+      "points": 2
+    },
+    {
+      "id": "S003",
+      "type": "true_false",
+      "question": "Symfony routes can be defined with PHP attributes.",
+      "correct_answer": true,
+      "explanation": "Modern Symfony applications commonly use PHP attributes for route declarations.",
+      "category": "Routing"
+    },
+    {
+      "id": "S004",
+      "type": "short_answer",
+      "question": "What is the main benefit of using namespaces in PHP projects?",
+      "accepted_answers": ["prevent name collisions"],
+      "model_answer": "Namespaces organize code and prevent class name collisions in larger projects.",
+      "keywords": [
+        {"text": "collision", "weight": 1},
+        {"text": "organize", "weight": 1},
+        {"text": "maintain", "weight": 0.5}
+      ],
+      "category": "Architecture",
+      "hint": "Think about what happens when two libraries define the same class name."
+    },
+    {
+      "id": "S005",
+      "type": "fill_blank",
+      "question": "The Symfony object that represents an HTTP response is named ____.",
+      "accepted_answers": ["Response", "Symfony\\Component\\HttpFoundation\\Response"],
+      "explanation": "HttpFoundation provides the Response class.",
+      "category": "HttpFoundation"
+    },
+    {
+      "id": "S006",
+      "type": "matching",
+      "question": "Match each Symfony concept to its role.",
+      "matching_pairs": {
+        "Route": "Maps URL to controller",
+        "Service": "Reusable application object",
+        "Twig": "Template rendering"
+      },
+      "category": "Architecture",
+      "points": 2
+    },
+    {
+      "id": "S007",
+      "type": "ordering",
+      "question": "Order this simplified request lifecycle.",
+      "correct_order": [
+        "Request enters front controller",
+        "Router matches a route",
+        "Controller builds a response",
+        "Response is sent"
+      ],
+      "category": "Routing",
+      "points": 2
+    },
+    {
+      "id": "S008",
+      "type": "numerical",
+      "question": "If a quiz has 20 questions worth 2 points each, how many total points are available?",
+      "correct_answer": 40,
+      "tolerance": 0,
+      "category": "Assessment"
+    },
+    {
+      "id": "S009",
+      "type": "scenario",
+      "scenario_context": "A controller directly creates three concrete service classes and is now hard to test.",
+      "question": "What refactor would improve testability and maintainability?",
+      "model_answer": "Inject dependencies through the constructor or method and depend on abstractions where useful.",
+      "keywords": [
+        {"text": "inject", "weight": 1},
+        {"text": "dependency", "weight": 1},
+        {"text": "test", "weight": 0.5}
+      ],
+      "category": "Dependency Injection",
+      "points": 2
+    },
+    {
+      "id": "S010",
+      "type": "code",
+      "question": "Write a minimal controller action that returns a JSON response.",
+      "code_snippet": "use Symfony\\Component\\HttpFoundation\\JsonResponse;",
+      "reference_solution": "public function status(): JsonResponse { return new JsonResponse(['ok' => true]); }",
+      "rubric": {
+        "checklist": [
+          "Returns JsonResponse",
+          "Defines an action method",
+          "Provides serializable response data"
+        ]
+      },
+      "category": "Controllers",
+      "learning_objective": "Create framework-native responses",
+      "points": 3
+    }
+  ]
+}
