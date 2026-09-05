@@ -201,6 +201,7 @@ class SessionProvider with ChangeNotifier {
     _status = SessionStatus.completed;
     await persistSession(notify: false);
     await SqliteService.instance.completeSession(_sessionId!);
+    _savedSessions.removeWhere((session) => session.id == _sessionId);
     notifyListeners();
   }
 

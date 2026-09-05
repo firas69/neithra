@@ -49,6 +49,10 @@ flutter test
 flutter build apk --release
 ```
 
+If your editor crashes while building, run the same commands from a terminal instead of
+inside VS Code. The local Gradle settings already cap memory and worker count to reduce
+pressure during release builds.
+
 With optional remote history:
 
 ```sh

@@ -106,24 +106,24 @@ class _AnswerInputWidgetState extends State<AnswerInputWidget> {
   }
 
   Widget _buildSingleChoiceWidget() {
-    return RadioGroup<int>(
-      groupValue: _answer.selectedIndex,
-      onChanged: (value) {
-        if (value == null) return;
-        _emit(AnswerValue.singleChoice(value));
-      },
-      child: Column(
-        children: widget.question.options.asMap().entries.map((entry) {
-          final index = entry.key;
-          final option = entry.value;
+    return Column(
+      children: widget.question.options.asMap().entries.map((entry) {
+        final index = entry.key;
+        final selected = _answer.selectedIndex == index;
+        final correct = _isSingleCorrectIndex(index);
+        final incorrect = widget.revealPracticeFeedback && selected && !correct;
 
-          return RadioListTile<int>(
-            contentPadding: EdgeInsets.zero,
-            title: Text(option),
-            value: index,
-          );
-        }).toList(),
-      ),
+        return _OptionCard(
+          label: entry.value,
+          selected: selected,
+          correct: widget.revealPracticeFeedback && correct,
+          incorrect: incorrect,
+          leading: selected
+              ? Icons.radio_button_checked
+              : Icons.radio_button_unchecked,
+          onTap: () => _emit(AnswerValue.singleChoice(index)),
+        );
+      }).toList(),
     );
   }
 
@@ -133,17 +133,23 @@ class _AnswerInputWidgetState extends State<AnswerInputWidget> {
       children: widget.question.options.asMap().entries.map((entry) {
         final index = entry.key;
         final option = entry.value;
+        final isSelected = selected.contains(index);
+        final correct = _isMultipleCorrectIndex(index);
+        final incorrect =
+            widget.revealPracticeFeedback && isSelected && !correct;
 
-        return CheckboxListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(option),
-          value: selected.contains(index),
-          onChanged: (checked) {
+        return _OptionCard(
+          label: option,
+          selected: isSelected,
+          correct: widget.revealPracticeFeedback && correct,
+          incorrect: incorrect,
+          leading: isSelected ? Icons.check_box : Icons.check_box_outline_blank,
+          onTap: () {
             final next = {...selected};
-            if (checked == true) {
-              next.add(index);
-            } else {
+            if (isSelected) {
               next.remove(index);
+            } else {
+              next.add(index);
             }
             _emit(AnswerValue.multipleChoice(next.toList()));
           },
@@ -153,20 +159,21 @@ class _AnswerInputWidgetState extends State<AnswerInputWidget> {
   }
 
   Widget _buildTrueFalseWidget() {
-    return SegmentedButton<bool>(
-      segments: const [
-        ButtonSegment(value: true, label: Text('True')),
-        ButtonSegment(value: false, label: Text('False')),
-      ],
-      selected: _answer.booleanValue == null
-          ? <bool>{}
-          : {_answer.booleanValue!},
-      emptySelectionAllowed: true,
-      onSelectionChanged: (selection) {
-        if (selection.isNotEmpty) {
-          _emit(AnswerValue.boolean(selection.first));
-        }
-      },
+    return Column(
+      children: [true, false].map((value) {
+        final selected = _answer.booleanValue == value;
+        final correct = _boolValue(widget.question.correctAnswer) == value;
+        return _OptionCard(
+          label: value ? 'True' : 'False',
+          selected: selected,
+          correct: widget.revealPracticeFeedback && correct,
+          incorrect: widget.revealPracticeFeedback && selected && !correct,
+          leading: selected
+              ? Icons.radio_button_checked
+              : Icons.radio_button_unchecked,
+          onTap: () => _emit(AnswerValue.boolean(value)),
+        );
+      }).toList(),
     );
   }
 
@@ -356,6 +363,19 @@ class _AnswerInputWidgetState extends State<AnswerInputWidget> {
     return '';
   }
 
+  bool _isSingleCorrectIndex(int index) {
+    return _intValue(widget.question.correctAnswer) == index;
+  }
+
+  bool _isMultipleCorrectIndex(int index) {
+    if (widget.question.correctAnswers.isNotEmpty) {
+      return widget.question.correctAnswers.map(_intValue).contains(index);
+    }
+    final answer = widget.question.correctAnswer;
+    if (answer is List) return answer.map(_intValue).contains(index);
+    return _intValue(answer) == index;
+  }
+
   void _emit(AnswerValue answer) {
     setState(() {
       _answer = answer;
@@ -368,4 +388,100 @@ class _AnswerInputWidgetState extends State<AnswerInputWidget> {
     _controller.dispose();
     super.dispose();
   }
+}
+
+class _OptionCard extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final bool correct;
+  final bool incorrect;
+  final IconData leading;
+  final VoidCallback onTap;
+
+  const _OptionCard({
+    required this.label,
+    required this.selected,
+    required this.correct,
+    required this.incorrect,
+    required this.leading,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = correct
+        ? AppColors.green
+        : incorrect
+        ? AppColors.red
+        : selected
+        ? AppColors.navyBlue
+        : AppColors.lightSilver;
+    final icon = correct
+        ? Icons.check_circle
+        : incorrect
+        ? Icons.cancel
+        : leading;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: correct
+            ? AppColors.green.withValues(alpha: 0.08)
+            : incorrect
+            ? AppColors.red.withValues(alpha: 0.08)
+            : selected
+            ? AppColors.navyBlue.withValues(alpha: 0.06)
+            : AppColors.white,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: onTap,
+          child: Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(minHeight: 56),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: color, width: selected ? 2 : 1),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, color: color, size: 22),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: selected || correct
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+int? _intValue(dynamic value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  return null;
+}
+
+bool? _boolValue(dynamic value) {
+  if (value is bool) return value;
+  if (value is String) {
+    final normalized = value.toLowerCase();
+    if (normalized == 'true') return true;
+    if (normalized == 'false') return false;
+  }
+  return null;
 }

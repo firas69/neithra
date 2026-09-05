@@ -3,7 +3,7 @@
 Neithra is a Flutter learning and assessment app for structured practice sessions.
 It turns JSON-based test definitions into a focused workflow:
 
-`Load test -> Practice -> Pause -> Resume -> Complete -> Review -> Practice weaknesses`
+`Create profile -> Import tests -> Practice -> Pause -> Resume -> Complete -> Review history`
 
 The project is intentionally local-first. Tests and in-progress sessions are persisted on
 device with SQLite, while the optional remote history service is disabled unless a backend
@@ -12,7 +12,12 @@ URL is provided at build time.
 ## Highlights
 
 - Focused practice and exam modes with responsive phone/tablet layouts.
+- First-launch username setup with an editable local profile.
+- Persistent bottom navigation for Home, Tests, History, and Profile.
+- Internal test library with stable test IDs, friendly display names, search, and rename.
 - Durable pause/resume sessions that survive app restarts.
+- Immutable completed-attempt history with question-by-question snapshots.
+- Activity streak based on local calendar days with completed tests.
 - Rich question model with scoring, metadata, explanations, hints, skills, categories,
   estimated time, points, and optional negative marking.
 - Extensible answer rendering for single choice, multiple answer, true/false, short answer,
@@ -26,7 +31,11 @@ URL is provided at build time.
 
 Current main surfaces:
 
-- `UploadScreen`: load JSON, choose practice/exam mode, resume saved sessions.
+- `AppShell`: persistent bottom navigation using an `IndexedStack`.
+- `HomeDashboardScreen`: greeting, quick import, recent tests, and resume card.
+- `TestsScreen`: searchable imported test library with rename actions.
+- `HistoryScreen`: completed attempts, newest first.
+- `ProfileScreen`: username editing, activity streak, and activity summary.
 - `PracticeScreen`: focused answering UI, question map, elapsed time, flags, pause/save.
 - `ResultsScreen`: review answers, explanations, scoring details, weakest categories.
 
@@ -35,10 +44,10 @@ Current main surfaces:
 ```text
 lib/
   core/                 Theme, constants, small utilities
-  models/               Test, question, answer, session, and result contracts
-  providers/            Provider state for tests, sessions, and results
+  models/               Profile, imported test, test, question, answer, session, attempt
+  providers/            Provider state for profile, library, sessions, results, history
   services/             JSON parsing, local file storage, SQLite, optional remote history
-  views/                App screens
+  views/                App shell, tabs, detail screens, active test, results
   widgets/              Reusable test-taking and answer-rendering widgets
 docs/                   Architecture, schema, release, and reviewer notes
 samples/                Example test definitions
@@ -63,7 +72,8 @@ flutter test
 flutter run
 ```
 
-Load `samples/symfony_learning_sprint.json` from the app, or use the built-in sample data.
+Import `samples/symfony_learning_sprint.json` from the app, or use the built-in sample
+action on Home.
 
 ## Build Android APK
 

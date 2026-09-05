@@ -134,46 +134,23 @@ class _PracticeScreenState extends State<PracticeScreen> {
             : (sessionProvider.currentQuestionIndex + 1) /
                   sessionProvider.questions.length;
 
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final wide = constraints.maxWidth >= 840;
-            final content = _QuestionSurface(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildProgressHeader(sessionProvider, progress),
-                  const SizedBox(height: 16),
-                  QuestionWidget(
-                    question: question,
-                    questionNumber: sessionProvider.currentQuestionIndex + 1,
-                    totalQuestions: sessionProvider.questions.length,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildAnswerPanel(sessionProvider),
-                ],
+        return _QuestionSurface(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildProgressHeader(sessionProvider, progress),
+              const SizedBox(height: 16),
+              QuestionWidget(
+                question: question,
+                questionNumber: sessionProvider.currentQuestionIndex + 1,
+                totalQuestions: sessionProvider.questions.length,
               ),
-            );
-
-            if (wide) {
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(
-                    width: 260,
-                    child: _buildQuestionMap(sessionProvider, compact: false),
-                  ),
-                  Expanded(child: content),
-                ],
-              );
-            }
-
-            return Column(
-              children: [
-                _buildQuestionMap(sessionProvider, compact: true),
-                Expanded(child: content),
-              ],
-            );
-          },
+              const SizedBox(height: 16),
+              _buildAnswerPanel(sessionProvider),
+              const SizedBox(height: 12),
+              _buildQuestionMap(sessionProvider),
+            ],
+          ),
         );
       },
     );
@@ -218,8 +195,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          '${sessionProvider.answeredCount}/${sessionProvider.questions.length} answered',
-          style: Theme.of(context).textTheme.bodyMedium,
+          'Question ${sessionProvider.currentQuestionIndex + 1} of '
+          '${sessionProvider.questions.length} - '
+          '${sessionProvider.answeredCount} answered',
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
       ],
     );
@@ -259,10 +240,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
     );
   }
 
-  Widget _buildQuestionMap(
-    SessionProvider sessionProvider, {
-    required bool compact,
-  }) {
+  Widget _buildQuestionMap(SessionProvider sessionProvider) {
     final items = sessionProvider.questions.asMap().entries.map((entry) {
       final index = entry.key;
       final question = entry.value;
@@ -310,39 +288,19 @@ class _PracticeScreenState extends State<PracticeScreen> {
       );
     }).toList();
 
-    return Container(
-      padding: EdgeInsets.all(compact ? 8 : 16),
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.white,
-        border: Border(
-          right: compact
-              ? BorderSide.none
-              : const BorderSide(color: AppColors.lightSilver),
-          bottom: compact
-              ? const BorderSide(color: AppColors.lightSilver)
-              : BorderSide.none,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.lightSilver),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(children: [...items, const SizedBox(width: 8), _Legend()]),
         ),
       ),
-      child: compact
-          ? SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(children: items),
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Questions',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.headlineMedium?.copyWith(fontSize: 18),
-                ),
-                const SizedBox(height: 12),
-                Wrap(children: items),
-                const Spacer(),
-                _Legend(),
-              ],
-            ),
     );
   }
 
@@ -435,6 +393,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
   Future<void> _pauseAndExit() async {
     await context.read<SessionProvider>().pauseSession();
     if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Progress saved.')));
     Navigator.of(context).pop();
   }
 
@@ -472,11 +433,12 @@ class _QuestionSurface extends StatelessWidget {
 class _Legend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return const Row(
       children: [
         _LegendRow(color: AppColors.navyBlue, label: 'Current'),
+        SizedBox(width: 10),
         _LegendRow(color: AppColors.green, label: 'Answered'),
+        SizedBox(width: 10),
         _LegendRow(color: AppColors.darkGold, label: 'Flagged'),
       ],
     );
@@ -491,15 +453,12 @@ class _LegendRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: Row(
-        children: [
-          Container(width: 12, height: 12, color: color),
-          const SizedBox(width: 8),
-          Text(label),
-        ],
-      ),
+    return Row(
+      children: [
+        Container(width: 10, height: 10, color: color),
+        const SizedBox(width: 5),
+        Text(label, style: Theme.of(context).textTheme.bodyMedium),
+      ],
     );
   }
 }

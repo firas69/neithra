@@ -1,12 +1,16 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../models/answer_value_model.dart';
+import '../../models/imported_test_model.dart';
 import '../../models/response_model.dart';
 import '../../models/session_snapshot_model.dart';
+import '../../models/test_attempt_model.dart';
 import '../../models/test_model.dart';
+import '../../models/user_profile_model.dart';
 
 class SqliteService {
   static final SqliteService _instance = SqliteService._internal();
@@ -25,7 +29,7 @@ class SqliteService {
     final path = join(await getDatabasesPath(), 'quiz_app.db');
     return openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createTables,
       onUpgrade: _upgradeTables,
     );
@@ -62,6 +66,10 @@ class SqliteService {
         lastActiveAt TEXT
       )
     ''');
+
+    await _createProfileTable(db);
+    await _createImportedTestsTable(db);
+    await _createTestAttemptsTable(db);
   }
 
   Future<void> _upgradeTables(
@@ -121,6 +129,57 @@ class SqliteService {
       );
       await _addColumnIfMissing(db, 'sessions', 'lastActiveAt', 'TEXT');
     }
+
+    if (oldVersion < 3) {
+      await _createProfileTable(db);
+      await _createImportedTestsTable(db);
+      await _createTestAttemptsTable(db);
+    }
+  }
+
+  Future<void> _createProfileTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS profiles(
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createImportedTestsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS imported_tests(
+        id TEXT PRIMARY KEY,
+        displayName TEXT NOT NULL,
+        testJson TEXT NOT NULL,
+        importedAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL,
+        lastAttemptAt TEXT,
+        attemptsCount INTEGER DEFAULT 0,
+        bestScore REAL
+      )
+    ''');
+  }
+
+  Future<void> _createTestAttemptsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS test_attempts(
+        id TEXT PRIMARY KEY,
+        testId TEXT NOT NULL,
+        testName TEXT NOT NULL,
+        startedAt TEXT NOT NULL,
+        completedAt TEXT NOT NULL,
+        elapsedSeconds INTEGER NOT NULL,
+        scorePercentage REAL NOT NULL,
+        earnedPoints REAL NOT NULL,
+        maxPoints REAL NOT NULL,
+        correctAnswers INTEGER NOT NULL,
+        totalQuestions INTEGER NOT NULL,
+        questionResultsJson TEXT NOT NULL
+      )
+    ''');
   }
 
   Future<void> _addColumnIfMissing(
@@ -138,6 +197,160 @@ class SqliteService {
 
   Future<void> init() async {
     await database;
+  }
+
+  Future<UserProfile?> getUserProfile() async {
+    final db = await database;
+    final rows = await db.query('profiles', orderBy: 'createdAt ASC', limit: 1);
+    if (rows.isEmpty) return null;
+
+    try {
+      return UserProfile.fromJson(Map<String, dynamic>.from(rows.first));
+    } catch (e) {
+      debugPrint('Failed to read profile: $e');
+      return null;
+    }
+  }
+
+  Future<void> saveUserProfile(UserProfile profile) async {
+    final db = await database;
+    await db.insert(
+      'profiles',
+      profile.toJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> saveImportedTest(ImportedTest importedTest) async {
+    final db = await database;
+    await db.insert('imported_tests', {
+      'id': importedTest.id,
+      'displayName': importedTest.displayName,
+      'testJson': jsonEncode(importedTest.test.toJson()),
+      'importedAt': importedTest.importedAt.toIso8601String(),
+      'updatedAt': importedTest.updatedAt.toIso8601String(),
+      'lastAttemptAt': importedTest.lastAttemptAt?.toIso8601String(),
+      'attemptsCount': importedTest.attemptsCount,
+      'bestScore': importedTest.bestScore,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<List<ImportedTest>> getImportedTests() async {
+    final db = await database;
+    final rows = await db.query('imported_tests', orderBy: 'updatedAt DESC');
+    final tests = <ImportedTest>[];
+
+    for (final row in rows) {
+      try {
+        tests.add(_importedTestFromRow(row));
+      } catch (e) {
+        debugPrint('Skipping malformed imported test ${row['id']}: $e');
+      }
+    }
+
+    return tests;
+  }
+
+  Future<void> renameImportedTest(String id, String displayName) async {
+    final db = await database;
+    final trimmed = displayName.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError('Test name cannot be empty');
+    }
+
+    final rows = await db.query(
+      'imported_tests',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (rows.isEmpty) return;
+
+    final importedTest = _importedTestFromRow(
+      rows.first,
+    ).copyWith(displayName: trimmed, updatedAt: DateTime.now());
+    await saveImportedTest(importedTest);
+  }
+
+  Future<void> saveTestAttempt(TestAttempt attempt) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.insert('test_attempts', {
+        'id': attempt.id,
+        'testId': attempt.testId,
+        'testName': attempt.testName,
+        'startedAt': attempt.startedAt.toIso8601String(),
+        'completedAt': attempt.completedAt.toIso8601String(),
+        'elapsedSeconds': attempt.elapsedTime.inSeconds,
+        'scorePercentage': attempt.scorePercentage,
+        'earnedPoints': attempt.earnedPoints,
+        'maxPoints': attempt.maxPoints,
+        'correctAnswers': attempt.correctAnswers,
+        'totalQuestions': attempt.totalQuestions,
+        'questionResultsJson': jsonEncode(
+          attempt.questionResults.map((item) => item.toJson()).toList(),
+        ),
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+
+      final rows = await txn.query(
+        'imported_tests',
+        where: 'id = ?',
+        whereArgs: [attempt.testId],
+        limit: 1,
+      );
+      if (rows.isNotEmpty) {
+        final importedTest = _importedTestFromRow(rows.first);
+        await txn.update(
+          'imported_tests',
+          {
+            'lastAttemptAt': attempt.completedAt.toIso8601String(),
+            'attemptsCount': importedTest.attemptsCount + 1,
+            'bestScore': importedTest.bestScore == null
+                ? attempt.scorePercentage
+                : importedTest.bestScore! > attempt.scorePercentage
+                ? importedTest.bestScore
+                : attempt.scorePercentage,
+            'updatedAt': DateTime.now().toIso8601String(),
+          },
+          where: 'id = ?',
+          whereArgs: [attempt.testId],
+        );
+      }
+    });
+  }
+
+  Future<List<TestAttempt>> getTestAttempts() async {
+    final db = await database;
+    final rows = await db.query('test_attempts', orderBy: 'completedAt DESC');
+    final attempts = <TestAttempt>[];
+
+    for (final row in rows) {
+      try {
+        attempts.add(_testAttemptFromRow(row));
+      } catch (e) {
+        debugPrint('Skipping malformed attempt ${row['id']}: $e');
+      }
+    }
+
+    return attempts;
+  }
+
+  Future<TestAttempt?> getTestAttempt(String id) async {
+    final db = await database;
+    final rows = await db.query(
+      'test_attempts',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+
+    try {
+      return _testAttemptFromRow(rows.first);
+    } catch (e) {
+      debugPrint('Failed to read attempt $id: $e');
+      return null;
+    }
   }
 
   Future<void> saveResponse(ResponseModel response) async {
@@ -322,6 +535,42 @@ class SqliteService {
       whereArgs: [sessionId],
     );
     await db.delete('sessions', where: 'id = ?', whereArgs: [sessionId]);
+  }
+
+  ImportedTest _importedTestFromRow(Map<String, Object?> row) {
+    final test = TestModel.fromJson(
+      jsonDecode(row['testJson'].toString()) as Map<String, dynamic>,
+    );
+    return ImportedTest.fromJson({
+      'id': row['id'],
+      'displayName': row['displayName'],
+      'test': test.toJson(),
+      'importedAt': row['importedAt'],
+      'updatedAt': row['updatedAt'],
+      'lastAttemptAt': row['lastAttemptAt'],
+      'attemptsCount': row['attemptsCount'],
+      'bestScore': row['bestScore'],
+    });
+  }
+
+  TestAttempt _testAttemptFromRow(Map<String, Object?> row) {
+    final rawQuestionResults = jsonDecode(
+      row['questionResultsJson']?.toString() ?? '[]',
+    );
+    return TestAttempt.fromJson({
+      'id': row['id'],
+      'testId': row['testId'],
+      'testName': row['testName'],
+      'startedAt': row['startedAt'],
+      'completedAt': row['completedAt'],
+      'elapsedSeconds': row['elapsedSeconds'],
+      'scorePercentage': row['scorePercentage'],
+      'earnedPoints': row['earnedPoints'],
+      'maxPoints': row['maxPoints'],
+      'correctAnswers': row['correctAnswers'],
+      'totalQuestions': row['totalQuestions'],
+      'questionResults': rawQuestionResults,
+    });
   }
 }
 

@@ -5,12 +5,15 @@ import '../core/constants/app_colors.dart';
 import '../models/answer_value_model.dart';
 import '../models/question_model.dart';
 import '../models/result_model.dart';
+import '../models/test_attempt_model.dart';
 import '../models/test_model.dart';
+import '../providers/history_provider.dart';
 import '../providers/result_provider.dart';
 import '../providers/session_provider.dart';
+import '../providers/test_library_provider.dart';
 import '../providers/test_provider.dart';
+import 'app_shell.dart';
 import 'practice_screen.dart';
-import 'upload_screen.dart';
 
 class ResultsScreen extends StatefulWidget {
   final Duration? timeTaken;
@@ -22,6 +25,8 @@ class ResultsScreen extends StatefulWidget {
 }
 
 class _ResultsScreenState extends State<ResultsScreen> {
+  bool _attemptSaved = false;
+
   @override
   void initState() {
     super.initState();
@@ -31,6 +36,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
   Future<void> _calculateResults() async {
     final sessionProvider = context.read<SessionProvider>();
     final resultProvider = context.read<ResultProvider>();
+    final historyProvider = context.read<HistoryProvider>();
+    final libraryProvider = context.read<TestLibraryProvider>();
 
     if (sessionProvider.sessionId != null && sessionProvider.test != null) {
       await resultProvider.calculateResult(
@@ -40,6 +47,19 @@ class _ResultsScreenState extends State<ResultsScreen> {
         responses: sessionProvider.answers,
         timeTaken: widget.timeTaken ?? sessionProvider.elapsedTime,
       );
+      final result = resultProvider.currentResult;
+      final startedAt = sessionProvider.startTime;
+      if (!_attemptSaved && result != null && startedAt != null) {
+        _attemptSaved = true;
+        final attempt = TestAttempt.fromResult(
+          testId: sessionProvider.test!.id,
+          result: result,
+          questions: sessionProvider.questions,
+          startedAt: startedAt,
+        );
+        await historyProvider.saveAttempt(attempt);
+        await libraryProvider.loadTests();
+      }
     }
   }
 
@@ -282,7 +302,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
     context.read<ResultProvider>().clearResult();
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => const UploadScreen()),
+      MaterialPageRoute(builder: (context) => const AppShell()),
       (route) => false,
     );
   }
