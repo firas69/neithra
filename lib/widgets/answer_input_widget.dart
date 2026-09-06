@@ -36,8 +36,7 @@ class _AnswerInputWidgetState extends State<AnswerInputWidget> {
   @override
   void didUpdateWidget(AnswerInputWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.question.id != widget.question.id ||
-        oldWidget.initialValue != widget.initialValue) {
+    if (oldWidget.question.id != widget.question.id) {
       _controller.dispose();
       _resetForQuestion();
     }

@@ -74,6 +74,10 @@ class _Summary extends StatelessWidget {
               runSpacing: 8,
               children: [
                 _InfoChip(
+                  icon: Icons.folder_outlined,
+                  label: attempt.familyName,
+                ),
+                _InfoChip(
                   icon: Icons.percent,
                   label: '${attempt.scorePercentage.toStringAsFixed(1)}%',
                 ),

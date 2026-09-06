@@ -50,6 +50,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
         _attemptSaved = true;
         final attempt = TestAttempt.fromResult(
           testId: sessionProvider.test!.id,
+          familyId: sessionProvider.familyId,
+          familyName: sessionProvider.familyName,
           result: result,
           questions: sessionProvider.questions,
           startedAt: startedAt,

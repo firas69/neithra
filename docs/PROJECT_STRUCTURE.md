@@ -14,6 +14,7 @@ lib/
     utils/              Small file helpers and local-calendar streak logic
   models/
     answer_value_model.dart
+    exam_family_model.dart
     imported_test_model.dart
     question_model.dart
     response_model.dart
@@ -33,6 +34,7 @@ lib/
     api/                Optional remote history integration
     database/           Local file persistence and SQLite
     exam_fingerprint_service.dart
+    exam_statistics_service.dart
     json_parser_service.dart
   views/
     app_bootstrap.dart
@@ -40,6 +42,7 @@ lib/
     home_dashboard_screen.dart
     exams_screen.dart
     exam_detail_screen.dart
+    family_detail_screen.dart
     history_screen.dart
     history_detail_screen.dart
     profile_screen.dart
@@ -59,7 +62,7 @@ lib/
 JSON exam definition
   -> JsonParserService
   -> TestModel / Question models
-  -> ImportedTest / TestLibraryProvider
+  -> ExamFamily / ImportedTest / TestLibraryProvider
   -> SessionProvider
   -> SqliteService snapshots
   -> ResultProvider scoring
@@ -72,7 +75,8 @@ JSON exam definition
 The app uses `provider` for simple, explicit state ownership:
 
 - `ProfileProvider`: first-launch username and profile edits.
-- `TestLibraryProvider`: imported exams, search state, duplicate-safe import, and rename.
+- `TestLibraryProvider`: families, imported exams, search state, duplicate-safe import,
+  family assignment, moving, and rename/delete actions.
 - `TestProvider`: current exam handoff into the active exam screen. The name is retained
   internally for compatibility with the existing JSON/session model.
 - `SessionProvider`: active session, current question, answers, flags, elapsed time,
@@ -83,14 +87,16 @@ The app uses `provider` for simple, explicit state ownership:
 ## Persistence
 
 - `FileDbService` remains for backward-compatible current-definition storage.
-- `SqliteService` stores the profile, imported exam library, resumable session snapshots,
-  response history, and completed attempts.
-- A session snapshot includes the concrete question order, current index, answers,
-  flags, elapsed time, per-question timing, mode, and status.
+- `SqliteService` stores the profile, exam families, imported exam library, resumable
+  session snapshots, response history, and completed attempts.
+- A session snapshot includes family context, concrete question order, current index,
+  answers, flags, elapsed time, per-question timing, mode, and status.
 - A completed attempt stores exam name, score, elapsed time, completion date, and
   question-by-question review data independently from the current imported exam.
 - Imported exams store a canonical SHA-256 `contentHash` so semantically identical JSON
   is rejected even if formatting or file names differ.
+- `ExamStatisticsService` derives global, family, and exam-level statistics from attempts.
+- Completed attempts store `familyId` and `familyName` snapshots for historical integrity.
 
 ## Question Rendering
 

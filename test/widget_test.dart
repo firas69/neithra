@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neithra/core/utils/activity_streak.dart';
 import 'package:neithra/models/answer_value_model.dart';
+import 'package:neithra/models/exam_family_model.dart';
 import 'package:neithra/models/imported_test_model.dart';
 import 'package:neithra/models/question_model.dart';
 import 'package:neithra/models/result_model.dart';
 import 'package:neithra/models/test_attempt_model.dart';
 import 'package:neithra/services/exam_fingerprint_service.dart';
+import 'package:neithra/services/exam_statistics_service.dart';
 import 'package:neithra/services/json_parser_service.dart';
 import 'package:neithra/widgets/answer_input_widget.dart';
 
@@ -113,6 +115,68 @@ void main() {
     expect(renamed.contentHash, hash);
   });
 
+  test(
+    'family statistics aggregate attempts by historical family snapshot',
+    () {
+      final parsed = JsonParserService.parseJsonString(
+        JsonParserService.getSampleJson(),
+      )!;
+      final familyA = ExamFamily(
+        id: 'family-a',
+        name: 'CCNA',
+        createdAt: _fixedNow,
+        updatedAt: _fixedNow,
+      );
+      final familyB = ExamFamily(
+        id: 'family-b',
+        name: 'Linux',
+        createdAt: _fixedNow,
+        updatedAt: _fixedNow,
+      );
+      final hash = ExamFingerprintService.hashTest(parsed);
+      final exam = ImportedTest.fromParsedTest(
+        parsed,
+        hash,
+        familyId: familyA.id,
+      );
+      final movedExam = exam.copyWith(familyId: familyB.id);
+      final attempt = TestAttempt(
+        id: 'attempt-1',
+        testId: exam.id,
+        testName: exam.displayName,
+        familyId: familyA.id,
+        familyName: familyA.name,
+        startedAt: _fixedNow,
+        completedAt: _fixedNow,
+        elapsedTime: const Duration(minutes: 30),
+        scorePercentage: 80,
+        earnedPoints: 8,
+        maxPoints: 10,
+        correctAnswers: 8,
+        totalQuestions: 10,
+        questionResults: const [],
+      );
+
+      final oldFamilyStats = ExamStatisticsService.forFamily(
+        family: familyA,
+        exams: [movedExam],
+        attempts: [attempt],
+      );
+      final newFamilyStats = ExamStatisticsService.forFamily(
+        family: familyB,
+        exams: [movedExam],
+        attempts: [attempt],
+      );
+
+      expect(oldFamilyStats.attemptCount, 1);
+      expect(oldFamilyStats.averageScore, 80);
+      expect(newFamilyStats.examCount, 1);
+      expect(newFamilyStats.attemptCount, 0);
+      expect(movedExam.id, exam.id);
+      expect(movedExam.contentHash, exam.contentHash);
+    },
+  );
+
   test('test attempt stores immutable question result snapshots', () {
     final parsed = JsonParserService.parseJsonString(
       JsonParserService.getSampleJson(),
@@ -131,6 +195,8 @@ void main() {
 
     final attempt = TestAttempt.fromResult(
       testId: 'test-1',
+      familyId: 'family-a',
+      familyName: 'Family A',
       result: result,
       questions: [parsed.questions.first],
       startedAt: DateTime(2026, 9, 5, 9, 58),
@@ -211,6 +277,45 @@ void main() {
     expect(storedAnswer.selectedIndex, 1);
   });
 
+  testWidgets('text answer controller preserves cursor across rebuilds', (
+    tester,
+  ) async {
+    final question = Question(
+      id: 'text-1',
+      type: QuestionType.shortAnswer,
+      prompt: 'Describe subnetting.',
+    );
+    var storedAnswer = const AnswerValue.empty();
+
+    Widget buildWidget(AnswerValue answer) {
+      return MaterialApp(
+        home: Scaffold(
+          body: AnswerInputWidget(
+            question: question,
+            initialValue: answer,
+            onAnswerChanged: (answer) => storedAnswer = answer,
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(buildWidget(storedAnswer));
+    await tester.enterText(find.byType(TextField), 'Networking Fundamentals');
+    await tester.pump();
+    await tester.pumpWidget(buildWidget(storedAnswer));
+    await tester.pump();
+
+    final editableText = tester.state<EditableTextState>(
+      find.byType(EditableText),
+    );
+
+    expect(editableText.textEditingValue.text, 'Networking Fundamentals');
+    expect(
+      editableText.textEditingValue.selection.extentOffset,
+      'Networking Fundamentals'.length,
+    );
+  });
+
   testWidgets('ordering question does not auto-save a user answer', (
     tester,
   ) async {
@@ -236,6 +341,8 @@ void main() {
     expect(emitted, isFalse);
   });
 }
+
+final _fixedNow = DateTime(2026, 9, 6, 12);
 
 Question _singleChoiceQuestion() {
   return Question(

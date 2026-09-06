@@ -1,3 +1,4 @@
+import 'exam_family_model.dart';
 import 'test_model.dart';
 
 class ImportedTest {
@@ -5,6 +6,7 @@ class ImportedTest {
   final String displayName;
   final TestModel test;
   final String contentHash;
+  final String familyId;
   final DateTime importedAt;
   final DateTime updatedAt;
   final DateTime? lastAttemptAt;
@@ -16,6 +18,7 @@ class ImportedTest {
     required this.displayName,
     required this.test,
     required this.contentHash,
+    required this.familyId,
     required this.importedAt,
     required this.updatedAt,
     this.lastAttemptAt,
@@ -23,7 +26,11 @@ class ImportedTest {
     this.bestScore,
   });
 
-  factory ImportedTest.fromParsedTest(TestModel test, String contentHash) {
+  factory ImportedTest.fromParsedTest(
+    TestModel test,
+    String contentHash, {
+    String familyId = ExamFamily.uncategorizedId,
+  }) {
     final now = DateTime.now();
     final id = 'test-${now.microsecondsSinceEpoch}';
     final name = test.title.trim().isEmpty
@@ -34,6 +41,7 @@ class ImportedTest {
       displayName: name,
       test: test.copyWith(id: id),
       contentHash: contentHash,
+      familyId: familyId,
       importedAt: now,
       updatedAt: now,
     );
@@ -51,6 +59,7 @@ class ImportedTest {
       displayName: displayName.isEmpty ? 'Untitled Exam' : displayName,
       test: test.copyWith(id: id),
       contentHash: json['contentHash']?.toString() ?? '',
+      familyId: json['familyId']?.toString() ?? ExamFamily.uncategorizedId,
       importedAt:
           DateTime.tryParse(json['importedAt']?.toString() ?? '') ??
           DateTime.now(),
@@ -70,6 +79,7 @@ class ImportedTest {
     int? attemptsCount,
     double? bestScore,
     String? contentHash,
+    String? familyId,
   }) {
     final nextName = displayName?.trim() ?? this.displayName;
     return ImportedTest(
@@ -77,6 +87,7 @@ class ImportedTest {
       displayName: nextName,
       test: test.copyWith(id: id),
       contentHash: contentHash ?? this.contentHash,
+      familyId: familyId ?? this.familyId,
       importedAt: importedAt,
       updatedAt: updatedAt ?? this.updatedAt,
       lastAttemptAt: lastAttemptAt ?? this.lastAttemptAt,
@@ -91,6 +102,7 @@ class ImportedTest {
       'displayName': displayName,
       'test': test.copyWith(id: id).toJson(),
       'contentHash': contentHash,
+      'familyId': familyId,
       'importedAt': importedAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       if (lastAttemptAt != null)

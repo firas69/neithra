@@ -88,6 +88,8 @@ class TestAttempt {
   final String id;
   final String testId;
   final String testName;
+  final String familyId;
+  final String familyName;
   final DateTime startedAt;
   final DateTime completedAt;
   final Duration elapsedTime;
@@ -102,6 +104,8 @@ class TestAttempt {
     required this.id,
     required this.testId,
     required this.testName,
+    required this.familyId,
+    required this.familyName,
     required this.startedAt,
     required this.completedAt,
     required this.elapsedTime,
@@ -115,6 +119,8 @@ class TestAttempt {
 
   factory TestAttempt.fromResult({
     required String testId,
+    required String familyId,
+    required String familyName,
     required ResultModel result,
     required List<Question> questions,
     required DateTime startedAt,
@@ -123,6 +129,8 @@ class TestAttempt {
       id: result.sessionId,
       testId: testId,
       testName: result.testTitle,
+      familyId: familyId,
+      familyName: familyName,
       startedAt: startedAt,
       completedAt: result.completedAt,
       elapsedTime: result.timeTaken,
@@ -147,7 +155,9 @@ class TestAttempt {
     return TestAttempt(
       id: json['id']?.toString() ?? '',
       testId: json['testId']?.toString() ?? '',
-      testName: json['testName']?.toString() ?? 'Untitled Test',
+      testName: json['testName']?.toString() ?? 'Untitled Exam',
+      familyId: json['familyId']?.toString() ?? 'family-uncategorized',
+      familyName: json['familyName']?.toString() ?? 'Uncategorized',
       startedAt:
           DateTime.tryParse(json['startedAt']?.toString() ?? '') ??
           DateTime.now(),
@@ -180,6 +190,8 @@ class TestAttempt {
       'id': id,
       'testId': testId,
       'testName': testName,
+      'familyId': familyId,
+      'familyName': familyName,
       'startedAt': startedAt.toIso8601String(),
       'completedAt': completedAt.toIso8601String(),
       'elapsedSeconds': elapsedTime.inSeconds,

@@ -6,6 +6,8 @@ enum SessionStatus { active, paused, completed }
 class SessionSummary {
   final String id;
   final String testTitle;
+  final String familyId;
+  final String familyName;
   final TestMode mode;
   final int currentQuestionIndex;
   final int totalQuestions;
@@ -18,6 +20,8 @@ class SessionSummary {
   const SessionSummary({
     required this.id,
     required this.testTitle,
+    this.familyId = 'family-uncategorized',
+    this.familyName = 'Uncategorized',
     required this.mode,
     required this.currentQuestionIndex,
     required this.totalQuestions,
@@ -31,7 +35,9 @@ class SessionSummary {
   factory SessionSummary.fromJson(Map<String, dynamic> json) {
     return SessionSummary(
       id: json['id'].toString(),
-      testTitle: json['testTitle']?.toString() ?? 'Untitled Test',
+      testTitle: json['testTitle']?.toString() ?? 'Untitled Exam',
+      familyId: json['familyId']?.toString() ?? 'family-uncategorized',
+      familyName: json['familyName']?.toString() ?? 'Uncategorized',
       mode: _parseMode(json['mode']),
       currentQuestionIndex: json['currentQuestionIndex'] as int? ?? 0,
       totalQuestions: json['totalQuestions'] as int? ?? 0,
@@ -51,6 +57,8 @@ class SessionSummary {
 class SessionSnapshot {
   final String id;
   final TestModel test;
+  final String familyId;
+  final String familyName;
   final TestMode mode;
   final int currentQuestionIndex;
   final Map<String, AnswerValue> answers;
@@ -64,6 +72,8 @@ class SessionSnapshot {
   const SessionSnapshot({
     required this.id,
     required this.test,
+    this.familyId = 'family-uncategorized',
+    this.familyName = 'Uncategorized',
     required this.mode,
     required this.currentQuestionIndex,
     required this.answers,
@@ -79,6 +89,8 @@ class SessionSnapshot {
     return SessionSummary(
       id: id,
       testTitle: test.title,
+      familyId: familyId,
+      familyName: familyName,
       mode: mode,
       currentQuestionIndex: currentQuestionIndex,
       totalQuestions: test.questions.length,

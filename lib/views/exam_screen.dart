@@ -41,10 +41,18 @@ class _ExamScreenState extends State<ExamScreen> {
       if (!resumed) {
         _startupError = 'Saved exam session could not be restored.';
       } else if (sessionProvider.test != null) {
-        testProvider.setCurrentTest(sessionProvider.test!);
+        testProvider.setCurrentTest(
+          sessionProvider.test!,
+          familyId: sessionProvider.familyId,
+          familyName: sessionProvider.familyName,
+        );
       }
     } else if (testProvider.currentTest != null) {
-      await sessionProvider.startSession(testProvider.currentTest!);
+      await sessionProvider.startSession(
+        testProvider.currentTest!,
+        familyId: testProvider.currentFamilyId,
+        familyName: testProvider.currentFamilyName,
+      );
     } else {
       _startupError = 'No exam is loaded.';
     }

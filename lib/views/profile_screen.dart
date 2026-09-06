@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/constants/app_colors.dart';
 import '../providers/history_provider.dart';
 import '../providers/profile_provider.dart';
+import '../providers/test_library_provider.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -19,10 +20,13 @@ class ProfileScreen extends StatelessWidget {
             Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 760),
-                child: Consumer2<ProfileProvider, HistoryProvider>(
-                  builder: (context, profileProvider, historyProvider, child) {
+                child: Consumer3<ProfileProvider, HistoryProvider, TestLibraryProvider>(
+                  builder: (context, profileProvider, historyProvider, libraryProvider, child) {
                     final profile = profileProvider.profile;
                     final username = profile?.username ?? 'Student';
+                    final globalStats = libraryProvider.globalStats(
+                      historyProvider.attempts,
+                    );
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -116,14 +120,54 @@ class ProfileScreen extends StatelessWidget {
                                 _MetricRow(
                                   icon: Icons.fact_check_outlined,
                                   label: 'Completed attempts',
-                                  value: historyProvider.attempts.length
-                                      .toString(),
+                                  value: globalStats.attemptCount.toString(),
                                 ),
                                 _MetricRow(
                                   icon: Icons.percent,
                                   label: 'Average score',
-                                  value: _averageScore(historyProvider),
+                                  value:
+                                      '${globalStats.averageScore.toStringAsFixed(0)}%',
                                 ),
+                                _MetricRow(
+                                  icon: Icons.timer_outlined,
+                                  label: 'Exam time',
+                                  value: _formatDuration(globalStats.totalTime),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Families',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(fontSize: 20),
+                                ),
+                                const SizedBox(height: 12),
+                                if (libraryProvider.families.isEmpty)
+                                  const Text('No exam families yet.')
+                                else
+                                  ...libraryProvider.families.map((family) {
+                                    final stats = libraryProvider.familyStats(
+                                      family.id,
+                                      historyProvider.attempts,
+                                    );
+                                    return _MetricRow(
+                                      icon: Icons.folder_outlined,
+                                      label: family.name,
+                                      value: stats.hasAttempts
+                                          ? '${stats.averageScore.toStringAsFixed(0)}%'
+                                          : '${stats.examCount} exams',
+                                    );
+                                  }),
                               ],
                             ),
                           ),
@@ -182,13 +226,11 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  String _averageScore(HistoryProvider historyProvider) {
-    if (historyProvider.attempts.isEmpty) return '0%';
-    final total = historyProvider.attempts.fold<double>(
-      0,
-      (sum, attempt) => sum + attempt.scorePercentage,
-    );
-    return '${(total / historyProvider.attempts.length).toStringAsFixed(0)}%';
+  String _formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    if (hours > 0) return '${hours}h ${minutes}m';
+    return '${minutes}m';
   }
 }
 

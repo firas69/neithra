@@ -6,6 +6,7 @@ import '../models/imported_test_model.dart';
 import '../providers/test_library_provider.dart';
 import '../providers/test_provider.dart';
 import 'exam_screen.dart';
+import 'exams_screen.dart';
 
 class ExamDetailScreen extends StatelessWidget {
   final String testId;
@@ -23,6 +24,9 @@ class ExamDetailScreen extends StatelessWidget {
     }
 
     final test = importedTest.test;
+    final familyName = context.watch<TestLibraryProvider>().familyNameFor(
+      importedTest.familyId,
+    );
     return Scaffold(
       appBar: AppBar(title: Text(importedTest.displayName)),
       body: SafeArea(
@@ -57,6 +61,7 @@ class ExamDetailScreen extends StatelessWidget {
                                   '${test.effectiveEstimatedDuration.inMinutes} min',
                             ),
                             _InfoChip(label: test.difficulty.name),
+                            _InfoChip(label: familyName),
                             if (test.topic.isNotEmpty)
                               _InfoChip(label: test.topic),
                             if (importedTest.bestScore != null)
@@ -71,6 +76,12 @@ class ExamDetailScreen extends StatelessWidget {
                           icon: const Icon(Icons.play_arrow),
                           label: const Text('Start Exam'),
                           onPressed: () => _start(context, importedTest),
+                        ),
+                        const SizedBox(height: 10),
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.drive_file_move_outline),
+                          label: const Text('Move to Family'),
+                          onPressed: () => _move(context, importedTest),
                         ),
                       ],
                     ),
@@ -87,10 +98,26 @@ class ExamDetailScreen extends StatelessWidget {
   void _start(BuildContext context, ImportedTest importedTest) {
     context.read<TestProvider>().setCurrentTest(
       importedTest.test.copyWith(title: importedTest.displayName),
+      familyId: importedTest.familyId,
+      familyName: context.read<TestLibraryProvider>().familyNameFor(
+        importedTest.familyId,
+      ),
     );
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const ExamScreen()),
+    );
+  }
+
+  Future<void> _move(BuildContext context, ImportedTest importedTest) async {
+    final family = await chooseFamily(
+      context,
+      initialFamilyId: importedTest.familyId,
+    );
+    if (family == null || !context.mounted) return;
+    await context.read<TestLibraryProvider>().moveExamToFamily(
+      importedTest.id,
+      family.id,
     );
   }
 }

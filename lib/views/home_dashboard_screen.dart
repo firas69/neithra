@@ -1,7 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -13,6 +9,7 @@ import '../providers/profile_provider.dart';
 import '../providers/session_provider.dart';
 import '../providers/test_library_provider.dart';
 import '../services/json_parser_service.dart';
+import 'exams_screen.dart';
 import 'exam_screen.dart';
 import 'exam_detail_screen.dart';
 
@@ -211,7 +208,7 @@ class _QuickActions extends StatelessWidget {
             FilledButton.icon(
               icon: const Icon(Icons.upload_file),
               label: const Text('Upload Exam'),
-              onPressed: () => _importFromFile(context),
+              onPressed: () => importExamFromFile(context),
             ),
             const SizedBox(height: 10),
             OutlinedButton.icon(
@@ -251,57 +248,6 @@ class _QuickActions extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Future<void> _importFromFile(BuildContext context) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final libraryProvider = context.read<TestLibraryProvider>();
-    try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: const ['json'],
-        withData: true,
-      );
-      if (result == null || result.files.isEmpty) return;
-
-      final file = result.files.single;
-      final content = file.bytes != null
-          ? utf8.decode(file.bytes!)
-          : await File(file.path!).readAsString();
-      final imported = await libraryProvider.importJson(content);
-      if (!context.mounted) return;
-      if (imported == null) {
-        final duplicate = libraryProvider.duplicateExam;
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(libraryProvider.error ?? 'Import failed'),
-            action: duplicate == null
-                ? null
-                : SnackBarAction(
-                    label: 'Open',
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ExamDetailScreen(testId: duplicate.id),
-                      ),
-                    ),
-                  ),
-          ),
-        );
-        return;
-      }
-      messenger.showSnackBar(
-        SnackBar(content: Text('${imported.displayName} imported')),
-      );
-    } catch (e) {
-      debugPrint('File import failed: $e');
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('The selected file could not be imported.'),
-        ),
-      );
-    }
   }
 }
 

@@ -5,6 +5,7 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../models/answer_value_model.dart';
+import '../../models/exam_family_model.dart';
 import '../../models/imported_test_model.dart';
 import '../../models/response_model.dart';
 import '../../models/session_snapshot_model.dart';
@@ -30,7 +31,7 @@ class SqliteService {
     final path = join(await getDatabasesPath(), 'quiz_app.db');
     return openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _createTables,
       onUpgrade: _upgradeTables,
     );
@@ -51,6 +52,8 @@ class SqliteService {
       CREATE TABLE sessions(
         id TEXT PRIMARY KEY,
         testTitle TEXT NOT NULL,
+        familyId TEXT DEFAULT '${ExamFamily.uncategorizedId}',
+        familyName TEXT DEFAULT '${ExamFamily.uncategorizedName}',
         startTime TEXT NOT NULL,
         endTime TEXT,
         currentQuestionIndex INTEGER DEFAULT 0,
@@ -69,8 +72,10 @@ class SqliteService {
     ''');
 
     await _createProfileTable(db);
+    await _createExamFamiliesTable(db);
     await _createImportedTestsTable(db);
     await _createTestAttemptsTable(db);
+    await _ensureDefaultFamily(db);
   }
 
   Future<void> _upgradeTables(
@@ -140,6 +145,47 @@ class SqliteService {
     if (oldVersion < 4) {
       await _addColumnIfMissing(db, 'imported_tests', 'contentHash', 'TEXT');
     }
+
+    if (oldVersion < 5) {
+      await _createExamFamiliesTable(db);
+      await _ensureDefaultFamily(db);
+      await _addColumnIfMissing(
+        db,
+        'imported_tests',
+        'familyId',
+        "TEXT DEFAULT '${ExamFamily.uncategorizedId}'",
+      );
+      await _addColumnIfMissing(
+        db,
+        'sessions',
+        'familyId',
+        "TEXT DEFAULT '${ExamFamily.uncategorizedId}'",
+      );
+      await _addColumnIfMissing(
+        db,
+        'sessions',
+        'familyName',
+        "TEXT DEFAULT '${ExamFamily.uncategorizedName}'",
+      );
+      await _addColumnIfMissing(
+        db,
+        'test_attempts',
+        'familyId',
+        "TEXT DEFAULT '${ExamFamily.uncategorizedId}'",
+      );
+      await _addColumnIfMissing(
+        db,
+        'test_attempts',
+        'familyName',
+        "TEXT DEFAULT '${ExamFamily.uncategorizedName}'",
+      );
+      await db.update(
+        'imported_tests',
+        {'familyId': ExamFamily.uncategorizedId},
+        where: 'familyId IS NULL OR familyId = ?',
+        whereArgs: [''],
+      );
+    }
   }
 
   Future<void> _createProfileTable(Database db) async {
@@ -153,12 +199,33 @@ class SqliteService {
     ''');
   }
 
+  Future<void> _createExamFamiliesTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS exam_families(
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _ensureDefaultFamily(Database db) async {
+    final family = ExamFamily.uncategorized();
+    await db.insert(
+      'exam_families',
+      family.toJson(),
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+  }
+
   Future<void> _createImportedTestsTable(Database db) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS imported_tests(
         id TEXT PRIMARY KEY,
         displayName TEXT NOT NULL,
         contentHash TEXT,
+        familyId TEXT DEFAULT '${ExamFamily.uncategorizedId}',
         testJson TEXT NOT NULL,
         importedAt TEXT NOT NULL,
         updatedAt TEXT NOT NULL,
@@ -175,6 +242,8 @@ class SqliteService {
         id TEXT PRIMARY KEY,
         testId TEXT NOT NULL,
         testName TEXT NOT NULL,
+        familyId TEXT DEFAULT '${ExamFamily.uncategorizedId}',
+        familyName TEXT DEFAULT '${ExamFamily.uncategorizedName}',
         startedAt TEXT NOT NULL,
         completedAt TEXT NOT NULL,
         elapsedSeconds INTEGER NOT NULL,
@@ -227,12 +296,105 @@ class SqliteService {
     );
   }
 
+  Future<List<ExamFamily>> getExamFamilies() async {
+    final db = await database;
+    await _ensureDefaultFamily(db);
+    final rows = await db.query(
+      'exam_families',
+      orderBy: 'name COLLATE NOCASE',
+    );
+    return rows
+        .map((row) => ExamFamily.fromJson(Map<String, dynamic>.from(row)))
+        .toList();
+  }
+
+  Future<void> saveExamFamily(ExamFamily family) async {
+    final db = await database;
+    await _ensureDefaultFamily(db);
+    final existing = await getExamFamilies();
+    final duplicate = existing.any(
+      (item) =>
+          item.id != family.id &&
+          item.name.trim().toLowerCase() == family.name.trim().toLowerCase(),
+    );
+    if (duplicate) {
+      throw ArgumentError('An exam family with this name already exists');
+    }
+
+    await db.insert(
+      'exam_families',
+      family.toJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> renameExamFamily(String id, String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError('Family name cannot be empty');
+    }
+    if (id == ExamFamily.uncategorizedId) {
+      throw ArgumentError('The Uncategorized family cannot be renamed');
+    }
+
+    final db = await database;
+    final rows = await db.query(
+      'exam_families',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (rows.isEmpty) return;
+    await saveExamFamily(
+      ExamFamily.fromJson(
+        Map<String, dynamic>.from(rows.first),
+      ).copyWith(name: trimmed),
+    );
+  }
+
+  Future<void> deleteExamFamilyMoveExamsToDefault(String id) async {
+    if (id == ExamFamily.uncategorizedId) return;
+    final db = await database;
+    await _ensureDefaultFamily(db);
+    await db.transaction((txn) async {
+      await txn.update(
+        'imported_tests',
+        {'familyId': ExamFamily.uncategorizedId},
+        where: 'familyId = ?',
+        whereArgs: [id],
+      );
+      await txn.delete('exam_families', where: 'id = ?', whereArgs: [id]);
+    });
+  }
+
+  Future<void> moveImportedTestToFamily(String examId, String familyId) async {
+    final db = await database;
+    await _ensureDefaultFamily(db);
+    final rows = await db.query(
+      'exam_families',
+      where: 'id = ?',
+      whereArgs: [familyId],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      throw ArgumentError('Family does not exist');
+    }
+
+    await db.update(
+      'imported_tests',
+      {'familyId': familyId, 'updatedAt': DateTime.now().toIso8601String()},
+      where: 'id = ?',
+      whereArgs: [examId],
+    );
+  }
+
   Future<void> saveImportedTest(ImportedTest importedTest) async {
     final db = await database;
     await db.insert('imported_tests', {
       'id': importedTest.id,
       'displayName': importedTest.displayName,
       'contentHash': importedTest.contentHash,
+      'familyId': importedTest.familyId,
       'testJson': jsonEncode(importedTest.test.toJson()),
       'importedAt': importedTest.importedAt.toIso8601String(),
       'updatedAt': importedTest.updatedAt.toIso8601String(),
@@ -320,6 +482,8 @@ class SqliteService {
         'id': attempt.id,
         'testId': attempt.testId,
         'testName': attempt.testName,
+        'familyId': attempt.familyId,
+        'familyName': attempt.familyName,
         'startedAt': attempt.startedAt.toIso8601String(),
         'completedAt': attempt.completedAt.toIso8601String(),
         'elapsedSeconds': attempt.elapsedTime.inSeconds,
@@ -435,6 +599,8 @@ class SqliteService {
     await db.insert('sessions', {
       'id': snapshot.id,
       'testTitle': snapshot.test.title,
+      'familyId': snapshot.familyId,
+      'familyName': snapshot.familyName,
       'startTime': snapshot.startedAt.toIso8601String(),
       'endTime': snapshot.status == SessionStatus.completed
           ? snapshot.lastActiveAt.toIso8601String()
@@ -471,6 +637,8 @@ class SqliteService {
       return SessionSummary.fromJson({
         'id': row['id'],
         'testTitle': row['testTitle'],
+        'familyId': row['familyId'],
+        'familyName': row['familyName'],
         'mode': row['mode'],
         'currentQuestionIndex': row['currentQuestionIndex'],
         'totalQuestions': row['totalQuestions'],
@@ -508,6 +676,8 @@ class SqliteService {
     return SessionSnapshot(
       id: row['id'].toString(),
       test: test,
+      familyId: row['familyId']?.toString() ?? ExamFamily.uncategorizedId,
+      familyName: row['familyName']?.toString() ?? ExamFamily.uncategorizedName,
       mode: _parseMode(row['mode']),
       currentQuestionIndex: row['currentQuestionIndex'] as int? ?? 0,
       answers: rawAnswers is Map
@@ -586,6 +756,7 @@ class SqliteService {
       'id': row['id'],
       'displayName': row['displayName'],
       'contentHash': row['contentHash'],
+      'familyId': row['familyId'],
       'test': test.toJson(),
       'importedAt': row['importedAt'],
       'updatedAt': row['updatedAt'],
@@ -603,6 +774,8 @@ class SqliteService {
       'id': row['id'],
       'testId': row['testId'],
       'testName': row['testName'],
+      'familyId': row['familyId'],
+      'familyName': row['familyName'],
       'startedAt': row['startedAt'],
       'completedAt': row['completedAt'],
       'elapsedSeconds': row['elapsedSeconds'],

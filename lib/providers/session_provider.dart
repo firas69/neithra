@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/answer_value_model.dart';
+import '../models/exam_family_model.dart';
 import '../models/question_model.dart';
 import '../models/response_model.dart';
 import '../models/session_snapshot_model.dart';
@@ -10,6 +11,8 @@ import '../services/database/sqlite_service.dart';
 class SessionProvider with ChangeNotifier {
   String? _sessionId;
   TestModel? _test;
+  String _familyId = ExamFamily.uncategorizedId;
+  String _familyName = ExamFamily.uncategorizedName;
   List<Question> _questions = [];
   int _currentQuestionIndex = 0;
   final Map<String, AnswerValue> _answers = {};
@@ -26,6 +29,8 @@ class SessionProvider with ChangeNotifier {
 
   String? get sessionId => _sessionId;
   TestModel? get test => _test;
+  String get familyId => _familyId;
+  String get familyName => _familyName;
   TestMode get mode => _mode;
   SessionStatus get status => _status;
   List<Question> get questions => _questions;
@@ -52,6 +57,8 @@ class SessionProvider with ChangeNotifier {
 
   Future<void> startSession(
     TestModel test, {
+    String familyId = ExamFamily.uncategorizedId,
+    String familyName = ExamFamily.uncategorizedName,
     TestMode? mode,
     List<Question>? questions,
   }) async {
@@ -59,6 +66,8 @@ class SessionProvider with ChangeNotifier {
     _mode = mode ?? TestMode.exam;
     _questions = questions ?? _prepareQuestions(test);
     _test = test.copyWith(questions: _questions);
+    _familyId = familyId;
+    _familyName = familyName;
     _currentQuestionIndex = 0;
     _answers.clear();
     _flaggedQuestionIds.clear();
@@ -80,6 +89,8 @@ class SessionProvider with ChangeNotifier {
 
     _sessionId = snapshot.id;
     _test = snapshot.test;
+    _familyId = snapshot.familyId;
+    _familyName = snapshot.familyName;
     _mode = snapshot.mode;
     _questions = snapshot.test.questions;
     _currentQuestionIndex = snapshot.currentQuestionIndex
@@ -229,6 +240,8 @@ class SessionProvider with ChangeNotifier {
   void resetSession({bool notify = true}) {
     _sessionId = null;
     _test = null;
+    _familyId = ExamFamily.uncategorizedId;
+    _familyName = ExamFamily.uncategorizedName;
     _questions.clear();
     _currentQuestionIndex = 0;
     _answers.clear();
@@ -262,6 +275,8 @@ class SessionProvider with ChangeNotifier {
     return SessionSnapshot(
       id: _sessionId!,
       test: _test!,
+      familyId: _familyId,
+      familyName: _familyName,
       mode: _mode,
       currentQuestionIndex: _currentQuestionIndex,
       answers: Map.unmodifiable(_answers),

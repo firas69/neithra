@@ -81,7 +81,7 @@ class _AttemptCard extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         subtitle: Text(
-          '${_formatDateTime(attempt.completedAt)} - '
+          '${attempt.familyName} - ${_formatDateTime(attempt.completedAt)} - '
           '${attempt.correctAnswers}/${attempt.totalQuestions} correct - '
           '${_formatDuration(attempt.elapsedTime)}',
         ),
