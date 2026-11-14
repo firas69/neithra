@@ -1,0 +1,723 @@
+LLM EXAM GENERATION PROMPTS
+
+Usage:
+1. Choose one prompt below.
+2. Replace every occurrence of {{SUBJECT}} with the desired subject/topic.
+3. Send the complete prompt to an LLM.
+4. Save the returned raw JSON as a .json file.
+5. Import it into Neithra.
+
+Only {{SUBJECT}} should need modification.
+
+================================================================================
+PROMPT 1 - BALANCED GENERAL EXAM
+================================================================================
+
+Create an import-ready Neithra exam JSON document about {{SUBJECT}}.
+
+Goal: generate a balanced general exam that covers fundamentals, conceptual understanding, practical application, and reasoning.
+
+Generate exactly 36 questions:
+- 18 single_choice
+- 5 multiple_choice
+- 4 true_false
+- 3 short_answer
+- 2 fill_blank
+- 2 matching
+- 1 ordering
+- 1 scenario
+
+Use the language implied by {{SUBJECT}}. If {{SUBJECT}} is written in French, generate the exam in French; if it is written in English, generate it in English.
+
+The JSON must match this exact Neithra import structure:
+- Top-level JSON must be an object.
+- Required top-level fields: "title" and "questions".
+- Recommended top-level fields to include: "topic", "description", "version", "test_mode", "difficulty", "estimated_duration", "categories", "shuffle_questions", "shuffle_answers", "passing_score".
+- Use "test_mode": "exam".
+- Use "difficulty": "mixed".
+- Use "version": "1.0".
+- Use "shuffle_questions": false and "shuffle_answers": false.
+- Use "passing_score": 70.
+- Do not include top-level "id", "generated_date", "generatedAt", "question_count", timestamps, LLM names, session data, user answers, scores, elapsed time, attempt history, family fields, or any unsupported fields.
+
+Each question object must contain:
+- "id": a unique string such as "Q001", "Q002", continuing sequentially.
+- "type": one of exactly "single_choice", "multiple_choice", "true_false", "short_answer", "fill_blank", "matching", "ordering", "numerical", "scenario", "code", "open_ended".
+- "question": the learner-facing question text.
+- "explanation": a concise educational explanation.
+- "difficulty": one of "foundation", "intermediate", "advanced", "mixed".
+- "category": a useful category within {{SUBJECT}}.
+- "skills": an array of short skill labels.
+- "estimated_time": an integer number of seconds.
+- "points": a number.
+
+Type-specific requirements:
+- single_choice: include "options" as an array of 4 strings and "correct_answer" as the zero-based index of the one correct option.
+- multiple_choice: include "options" as an array of 5 strings and "correct_answers" as an array of zero-based indexes. There must be at least 2 correct options and at least 2 incorrect options.
+- true_false: include "correct_answer" as true or false.
+- short_answer: include "accepted_answers" as an array of acceptable exact short answers, plus "model_answer". You may also include "keywords" as an array of objects with "text" and numeric "weight".
+- fill_blank: include "accepted_answers" as an array of acceptable exact answers.
+- matching: include "matching_pairs" as an object whose keys and values are strings.
+- ordering: include "correct_order" as an array of strings in the correct sequence.
+- numerical: include "correct_answer" as a number and "tolerance" as a number. Use this type only when numeric assessment naturally fits {{SUBJECT}}.
+- scenario: include "scenario_context", "model_answer", and either "accepted_answers" or "keywords". Keywords must be objects with "text" and numeric "weight".
+- code: use only if coding is genuinely relevant to {{SUBJECT}}. Include "code_snippet" when useful, "reference_solution", and "rubric": {"checklist": ["item 1", "item 2", "item 3"]}.
+- open_ended: use only when self-evaluation is educationally appropriate. Include "model_answer" or "rubric".
+
+Question quality rules:
+- Questions must be factually correct and useful for learning {{SUBJECT}}.
+- Avoid uncertain, invented, overly version-sensitive, or rapidly changing facts unless {{SUBJECT}} explicitly includes a version.
+- Do not create duplicate or near-duplicate questions.
+- Do not use ambiguous wording or accidental hints.
+- Distractors must be plausible, in the same conceptual area, and clearly incorrect.
+- Distribute correct option positions naturally. Do not use a predictable answer pattern.
+- For multiple_choice, every correct answer must be defensible and every incorrect option must be clearly wrong.
+- Explanations must explain why the answer is correct and, when useful, why a common alternative is wrong.
+
+Strict JSON output rules:
+- Return raw JSON only.
+- Do not wrap the response in Markdown code fences.
+- Do not include commentary before or after the JSON.
+- Use valid JSON syntax, double-quoted strings, no trailing commas, no comments, no JavaScript syntax, no undefined values, and no unsupported fields.
+- Validate internally before responding: required fields exist, question count is exactly 36, type-specific fields are present, option indexes are valid, explanations are present, no duplicate questions exist, and JSON syntax is valid.
+- Do not show the validation process. Return only the corrected final JSON document.
+
+================================================================================
+PROMPT 2 - BEGINNER / FUNDAMENTALS EXAM
+================================================================================
+
+Create an import-ready Neithra exam JSON document about {{SUBJECT}}.
+
+Goal: generate a beginner-friendly fundamentals exam for someone learning {{SUBJECT}} for the first time. Focus on core terminology, foundational concepts, essential knowledge, and basic comprehension. Avoid obscure edge cases.
+
+Generate exactly 24 questions:
+- 14 single_choice
+- 4 true_false
+- 3 fill_blank
+- 2 short_answer
+- 1 matching
+
+Use the language implied by {{SUBJECT}}. If {{SUBJECT}} is written in French, generate the exam in French; if it is written in English, generate it in English.
+
+The JSON must match this exact Neithra import structure:
+- Top-level JSON must be an object.
+- Required top-level fields: "title" and "questions".
+- Recommended top-level fields to include: "topic", "description", "version", "test_mode", "difficulty", "estimated_duration", "categories", "shuffle_questions", "shuffle_answers", "passing_score".
+- Use "test_mode": "exam".
+- Use "difficulty": "foundation".
+- Use "version": "1.0".
+- Use "shuffle_questions": false and "shuffle_answers": false.
+- Use "passing_score": 70.
+- Do not include top-level "id", "generated_date", "generatedAt", "question_count", timestamps, LLM names, session data, user answers, scores, elapsed time, attempt history, family fields, or any unsupported fields.
+
+Each question object must contain:
+- "id": a unique string such as "Q001", "Q002", continuing sequentially.
+- "type": one of exactly "single_choice", "multiple_choice", "true_false", "short_answer", "fill_blank", "matching", "ordering", "numerical", "scenario", "code", "open_ended".
+- "question": the learner-facing question text.
+- "explanation": a concise educational explanation.
+- "difficulty": "foundation".
+- "category": a useful category within {{SUBJECT}}.
+- "skills": an array of short skill labels.
+- "estimated_time": an integer number of seconds.
+- "points": a number.
+
+Type-specific requirements:
+- single_choice: include "options" as an array of 4 strings and "correct_answer" as the zero-based index of the one correct option.
+- multiple_choice: include "options" as an array of 5 strings and "correct_answers" as an array of zero-based indexes. There must be at least 2 correct options and at least 2 incorrect options.
+- true_false: include "correct_answer" as true or false.
+- short_answer: include "accepted_answers" as an array of acceptable exact short answers, plus "model_answer". You may also include "keywords" as an array of objects with "text" and numeric "weight".
+- fill_blank: include "accepted_answers" as an array of acceptable exact answers.
+- matching: include "matching_pairs" as an object whose keys and values are strings.
+- ordering: include "correct_order" as an array of strings in the correct sequence.
+- numerical: include "correct_answer" as a number and "tolerance" as a number. Use this type only when numeric assessment naturally fits {{SUBJECT}}.
+- scenario: include "scenario_context", "model_answer", and either "accepted_answers" or "keywords". Keywords must be objects with "text" and numeric "weight".
+- code: use only if coding is genuinely relevant to {{SUBJECT}}. Include "code_snippet" when useful, "reference_solution", and "rubric": {"checklist": ["item 1", "item 2", "item 3"]}.
+- open_ended: use only when self-evaluation is educationally appropriate. Include "model_answer" or "rubric".
+
+Question quality rules:
+- Questions must be factually correct and useful for learning {{SUBJECT}}.
+- Prefer widely accepted basics over edge cases.
+- Avoid uncertain, invented, overly version-sensitive, or rapidly changing facts unless {{SUBJECT}} explicitly includes a version.
+- Do not create duplicate or near-duplicate questions.
+- Do not use ambiguous wording or accidental hints.
+- Distractors must be plausible, in the same conceptual area, and clearly incorrect.
+- Distribute correct option positions naturally. Do not use a predictable answer pattern.
+- Explanations must teach the underlying concept in simple terms.
+
+Strict JSON output rules:
+- Return raw JSON only.
+- Do not wrap the response in Markdown code fences.
+- Do not include commentary before or after the JSON.
+- Use valid JSON syntax, double-quoted strings, no trailing commas, no comments, no JavaScript syntax, no undefined values, and no unsupported fields.
+- Validate internally before responding: required fields exist, question count is exactly 24, type-specific fields are present, option indexes are valid, explanations are present, no duplicate questions exist, and JSON syntax is valid.
+- Do not show the validation process. Return only the corrected final JSON document.
+
+================================================================================
+PROMPT 3 - INTERMEDIATE EXAM
+================================================================================
+
+Create an import-ready Neithra exam JSON document about {{SUBJECT}}.
+
+Goal: generate an intermediate exam for learners who already know the fundamentals of {{SUBJECT}} and need to test practical understanding. Prefer conceptual distinctions, applied questions, moderate reasoning, and realistic situations.
+
+Generate exactly 32 questions:
+- 15 single_choice
+- 5 multiple_choice
+- 3 true_false
+- 3 scenario
+- 2 matching
+- 2 ordering
+- 1 short_answer
+- 1 numerical if numeric assessment naturally fits {{SUBJECT}}; otherwise make this question another scenario question.
+
+Use the language implied by {{SUBJECT}}. If {{SUBJECT}} is written in French, generate the exam in French; if it is written in English, generate it in English.
+
+The JSON must match this exact Neithra import structure:
+- Top-level JSON must be an object.
+- Required top-level fields: "title" and "questions".
+- Recommended top-level fields to include: "topic", "description", "version", "test_mode", "difficulty", "estimated_duration", "categories", "shuffle_questions", "shuffle_answers", "passing_score".
+- Use "test_mode": "exam".
+- Use "difficulty": "intermediate".
+- Use "version": "1.0".
+- Use "shuffle_questions": false and "shuffle_answers": false.
+- Use "passing_score": 70.
+- Do not include top-level "id", "generated_date", "generatedAt", "question_count", timestamps, LLM names, session data, user answers, scores, elapsed time, attempt history, family fields, or any unsupported fields.
+
+Each question object must contain:
+- "id": a unique string such as "Q001", "Q002", continuing sequentially.
+- "type": one of exactly "single_choice", "multiple_choice", "true_false", "short_answer", "fill_blank", "matching", "ordering", "numerical", "scenario", "code", "open_ended".
+- "question": the learner-facing question text.
+- "explanation": a concise educational explanation.
+- "difficulty": "intermediate" unless a specific question is intentionally "foundation" or "advanced".
+- "category": a useful category within {{SUBJECT}}.
+- "skills": an array of short skill labels.
+- "estimated_time": an integer number of seconds.
+- "points": a number.
+
+Type-specific requirements:
+- single_choice: include "options" as an array of 4 strings and "correct_answer" as the zero-based index of the one correct option.
+- multiple_choice: include "options" as an array of 5 strings and "correct_answers" as an array of zero-based indexes. There must be at least 2 correct options and at least 2 incorrect options.
+- true_false: include "correct_answer" as true or false.
+- short_answer: include "accepted_answers" as an array of acceptable exact short answers, plus "model_answer". You may also include "keywords" as an array of objects with "text" and numeric "weight".
+- fill_blank: include "accepted_answers" as an array of acceptable exact answers.
+- matching: include "matching_pairs" as an object whose keys and values are strings.
+- ordering: include "correct_order" as an array of strings in the correct sequence.
+- numerical: include "correct_answer" as a number and "tolerance" as a number. Use this type only when numeric assessment naturally fits {{SUBJECT}}.
+- scenario: include "scenario_context", "model_answer", and either "accepted_answers" or "keywords". Keywords must be objects with "text" and numeric "weight".
+- code: use only if coding is genuinely relevant to {{SUBJECT}}. Include "code_snippet" when useful, "reference_solution", and "rubric": {"checklist": ["item 1", "item 2", "item 3"]}.
+- open_ended: use only when self-evaluation is educationally appropriate. Include "model_answer" or "rubric".
+
+Question quality rules:
+- Questions must be factually correct and useful for learning {{SUBJECT}}.
+- Prefer realistic applied understanding over memorized trivia.
+- Avoid uncertain, invented, overly version-sensitive, or rapidly changing facts unless {{SUBJECT}} explicitly includes a version.
+- Do not create duplicate or near-duplicate questions.
+- Do not use ambiguous wording or accidental hints.
+- Distractors must be plausible, in the same conceptual area, and clearly incorrect.
+- Distribute correct option positions naturally. Do not use a predictable answer pattern.
+- Explanations must clarify the relevant distinction or reasoning.
+
+Strict JSON output rules:
+- Return raw JSON only.
+- Do not wrap the response in Markdown code fences.
+- Do not include commentary before or after the JSON.
+- Use valid JSON syntax, double-quoted strings, no trailing commas, no comments, no JavaScript syntax, no undefined values, and no unsupported fields.
+- Validate internally before responding: required fields exist, question count is exactly 32, type-specific fields are present, option indexes are valid, explanations are present, no duplicate questions exist, and JSON syntax is valid.
+- Do not show the validation process. Return only the corrected final JSON document.
+
+================================================================================
+PROMPT 4 - ADVANCED / DIFFICULT EXAM
+================================================================================
+
+Create an import-ready Neithra exam JSON document about {{SUBJECT}}.
+
+Goal: generate a significantly harder exam. Difficulty should come from deeper subject matter, subtle misconceptions, edge cases where appropriate, multi-step reasoning, and advanced concepts. Do not make questions difficult by using intentionally confusing wording.
+
+Generate exactly 34 questions:
+- 14 single_choice
+- 6 multiple_choice
+- 2 true_false
+- 5 scenario
+- 2 short_answer
+- 2 matching
+- 2 ordering
+- 1 numerical if numeric assessment naturally fits {{SUBJECT}}; otherwise make this question another scenario question.
+
+Use the language implied by {{SUBJECT}}. If {{SUBJECT}} is written in French, generate the exam in French; if it is written in English, generate it in English.
+
+The JSON must match this exact Neithra import structure:
+- Top-level JSON must be an object.
+- Required top-level fields: "title" and "questions".
+- Recommended top-level fields to include: "topic", "description", "version", "test_mode", "difficulty", "estimated_duration", "categories", "shuffle_questions", "shuffle_answers", "passing_score".
+- Use "test_mode": "exam".
+- Use "difficulty": "advanced".
+- Use "version": "1.0".
+- Use "shuffle_questions": false and "shuffle_answers": false.
+- Use "passing_score": 75.
+- Do not include top-level "id", "generated_date", "generatedAt", "question_count", timestamps, LLM names, session data, user answers, scores, elapsed time, attempt history, family fields, or any unsupported fields.
+
+Each question object must contain:
+- "id": a unique string such as "Q001", "Q002", continuing sequentially.
+- "type": one of exactly "single_choice", "multiple_choice", "true_false", "short_answer", "fill_blank", "matching", "ordering", "numerical", "scenario", "code", "open_ended".
+- "question": the learner-facing question text.
+- "explanation": a concise educational explanation.
+- "difficulty": "advanced" unless a specific question is intentionally "intermediate".
+- "category": a useful category within {{SUBJECT}}.
+- "skills": an array of short skill labels.
+- "estimated_time": an integer number of seconds.
+- "points": a number.
+
+Type-specific requirements:
+- single_choice: include "options" as an array of 4 strings and "correct_answer" as the zero-based index of the one correct option.
+- multiple_choice: include "options" as an array of 5 strings and "correct_answers" as an array of zero-based indexes. There must be at least 2 correct options and at least 2 incorrect options.
+- true_false: include "correct_answer" as true or false.
+- short_answer: include "accepted_answers" as an array of acceptable exact short answers, plus "model_answer". You may also include "keywords" as an array of objects with "text" and numeric "weight".
+- fill_blank: include "accepted_answers" as an array of acceptable exact answers.
+- matching: include "matching_pairs" as an object whose keys and values are strings.
+- ordering: include "correct_order" as an array of strings in the correct sequence.
+- numerical: include "correct_answer" as a number and "tolerance" as a number. Use this type only when numeric assessment naturally fits {{SUBJECT}}.
+- scenario: include "scenario_context", "model_answer", and either "accepted_answers" or "keywords". Keywords must be objects with "text" and numeric "weight".
+- code: use only if coding is genuinely relevant to {{SUBJECT}}. Include "code_snippet" when useful, "reference_solution", and "rubric": {"checklist": ["item 1", "item 2", "item 3"]}.
+- open_ended: use only when self-evaluation is educationally appropriate. Include "model_answer" or "rubric".
+
+Question quality rules:
+- Questions must be factually correct and useful for advanced learning in {{SUBJECT}}.
+- Test subtle distinctions, advanced concepts, and realistic edge cases.
+- Avoid uncertain, invented, overly version-sensitive, or rapidly changing facts unless {{SUBJECT}} explicitly includes a version.
+- Do not create duplicate or near-duplicate questions.
+- Do not use ambiguous wording or accidental hints.
+- Distractors must be plausible, in the same conceptual area, and clearly incorrect.
+- Distribute correct option positions naturally. Do not use a predictable answer pattern.
+- Explanations must show the reasoning path, not merely restate the answer.
+
+Strict JSON output rules:
+- Return raw JSON only.
+- Do not wrap the response in Markdown code fences.
+- Do not include commentary before or after the JSON.
+- Use valid JSON syntax, double-quoted strings, no trailing commas, no comments, no JavaScript syntax, no undefined values, and no unsupported fields.
+- Validate internally before responding: required fields exist, question count is exactly 34, type-specific fields are present, option indexes are valid, explanations are present, no duplicate questions exist, and JSON syntax is valid.
+- Do not show the validation process. Return only the corrected final JSON document.
+
+================================================================================
+PROMPT 5 - CERTIFICATION / PROFESSIONAL EXAM STYLE
+================================================================================
+
+Create an import-ready Neithra exam JSON document about {{SUBJECT}}.
+
+Goal: generate a serious professional or certification-style assessment for {{SUBJECT}}. Use original questions only. Do not copy, imitate too closely, or claim to reproduce any copyrighted certification exam.
+
+Generate exactly 40 questions:
+- 22 single_choice
+- 7 multiple_choice
+- 3 true_false
+- 5 scenario
+- 1 matching
+- 1 ordering
+- 1 short_answer
+
+Use the language implied by {{SUBJECT}}. If {{SUBJECT}} is written in French, generate the exam in French; if it is written in English, generate it in English.
+
+The JSON must match this exact Neithra import structure:
+- Top-level JSON must be an object.
+- Required top-level fields: "title" and "questions".
+- Recommended top-level fields to include: "topic", "description", "version", "test_mode", "difficulty", "estimated_duration", "categories", "shuffle_questions", "shuffle_answers", "passing_score".
+- Use "test_mode": "exam".
+- Use "difficulty": "advanced".
+- Use "version": "1.0".
+- Use "shuffle_questions": false and "shuffle_answers": false.
+- Use "passing_score": 75.
+- Do not include top-level "id", "generated_date", "generatedAt", "question_count", timestamps, LLM names, session data, user answers, scores, elapsed time, attempt history, family fields, or any unsupported fields.
+
+Each question object must contain:
+- "id": a unique string such as "Q001", "Q002", continuing sequentially.
+- "type": one of exactly "single_choice", "multiple_choice", "true_false", "short_answer", "fill_blank", "matching", "ordering", "numerical", "scenario", "code", "open_ended".
+- "question": the learner-facing question text.
+- "explanation": a concise educational explanation.
+- "difficulty": "intermediate" or "advanced".
+- "category": a useful category within {{SUBJECT}}.
+- "skills": an array of short skill labels.
+- "estimated_time": an integer number of seconds.
+- "points": a number.
+
+Type-specific requirements:
+- single_choice: include "options" as an array of 4 strings and "correct_answer" as the zero-based index of the one correct option.
+- multiple_choice: include "options" as an array of 5 strings and "correct_answers" as an array of zero-based indexes. There must be at least 2 correct options and at least 2 incorrect options.
+- true_false: include "correct_answer" as true or false.
+- short_answer: include "accepted_answers" as an array of acceptable exact short answers, plus "model_answer". You may also include "keywords" as an array of objects with "text" and numeric "weight".
+- fill_blank: include "accepted_answers" as an array of acceptable exact answers.
+- matching: include "matching_pairs" as an object whose keys and values are strings.
+- ordering: include "correct_order" as an array of strings in the correct sequence.
+- numerical: include "correct_answer" as a number and "tolerance" as a number. Use this type only when numeric assessment naturally fits {{SUBJECT}}.
+- scenario: include "scenario_context", "model_answer", and either "accepted_answers" or "keywords". Keywords must be objects with "text" and numeric "weight".
+- code: use only if coding is genuinely relevant to {{SUBJECT}}. Include "code_snippet" when useful, "reference_solution", and "rubric": {"checklist": ["item 1", "item 2", "item 3"]}.
+- open_ended: use only when self-evaluation is educationally appropriate. Include "model_answer" or "rubric".
+
+Question quality rules:
+- Questions must be factually correct and useful for professional assessment in {{SUBJECT}}.
+- Include practical decisions, troubleshooting, realistic constraints, and conceptual understanding where appropriate.
+- Avoid uncertain, invented, overly version-sensitive, or rapidly changing facts unless {{SUBJECT}} explicitly includes a version.
+- Do not create duplicate or near-duplicate questions.
+- Do not use ambiguous wording or accidental hints.
+- Distractors must be plausible, in the same conceptual area, and clearly incorrect.
+- Distribute correct option positions naturally. Do not use a predictable answer pattern.
+- Explanations must justify the professional decision or best answer.
+
+Strict JSON output rules:
+- Return raw JSON only.
+- Do not wrap the response in Markdown code fences.
+- Do not include commentary before or after the JSON.
+- Use valid JSON syntax, double-quoted strings, no trailing commas, no comments, no JavaScript syntax, no undefined values, and no unsupported fields.
+- Validate internally before responding: required fields exist, question count is exactly 40, type-specific fields are present, option indexes are valid, explanations are present, no duplicate questions exist, and JSON syntax is valid.
+- Do not show the validation process. Return only the corrected final JSON document.
+
+================================================================================
+PROMPT 6 - SCENARIO-BASED EXAM
+================================================================================
+
+Create an import-ready Neithra exam JSON document about {{SUBJECT}}.
+
+Goal: generate a practical scenario-based exam. Questions should present realistic situations involving {{SUBJECT}} and ask the learner to determine the correct action, likely cause, best solution, correct interpretation, or next step.
+
+Generate exactly 30 questions:
+- 18 single_choice questions with realistic scenario-style stems
+- 6 multiple_choice questions with realistic scenario-style stems
+- 6 scenario questions using "scenario_context"
+
+Use the language implied by {{SUBJECT}}. If {{SUBJECT}} is written in French, generate the exam in French; if it is written in English, generate it in English.
+
+The JSON must match this exact Neithra import structure:
+- Top-level JSON must be an object.
+- Required top-level fields: "title" and "questions".
+- Recommended top-level fields to include: "topic", "description", "version", "test_mode", "difficulty", "estimated_duration", "categories", "shuffle_questions", "shuffle_answers", "passing_score".
+- Use "test_mode": "exam".
+- Use "difficulty": "intermediate".
+- Use "version": "1.0".
+- Use "shuffle_questions": false and "shuffle_answers": false.
+- Use "passing_score": 70.
+- Do not include top-level "id", "generated_date", "generatedAt", "question_count", timestamps, LLM names, session data, user answers, scores, elapsed time, attempt history, family fields, or any unsupported fields.
+
+Each question object must contain:
+- "id": a unique string such as "Q001", "Q002", continuing sequentially.
+- "type": one of exactly "single_choice", "multiple_choice", "true_false", "short_answer", "fill_blank", "matching", "ordering", "numerical", "scenario", "code", "open_ended".
+- "question": the learner-facing question text.
+- "explanation": a concise educational explanation.
+- "difficulty": "intermediate" or "advanced".
+- "category": a useful category within {{SUBJECT}}.
+- "skills": an array of short skill labels.
+- "estimated_time": an integer number of seconds.
+- "points": a number.
+
+Type-specific requirements:
+- single_choice: include "options" as an array of 4 strings and "correct_answer" as the zero-based index of the one correct option.
+- multiple_choice: include "options" as an array of 5 strings and "correct_answers" as an array of zero-based indexes. There must be at least 2 correct options and at least 2 incorrect options.
+- true_false: include "correct_answer" as true or false.
+- short_answer: include "accepted_answers" as an array of acceptable exact short answers, plus "model_answer". You may also include "keywords" as an array of objects with "text" and numeric "weight".
+- fill_blank: include "accepted_answers" as an array of acceptable exact answers.
+- matching: include "matching_pairs" as an object whose keys and values are strings.
+- ordering: include "correct_order" as an array of strings in the correct sequence.
+- numerical: include "correct_answer" as a number and "tolerance" as a number. Use this type only when numeric assessment naturally fits {{SUBJECT}}.
+- scenario: include "scenario_context", "model_answer", and either "accepted_answers" or "keywords". Keywords must be objects with "text" and numeric "weight".
+- code: use only if coding is genuinely relevant to {{SUBJECT}}. Include "code_snippet" when useful, "reference_solution", and "rubric": {"checklist": ["item 1", "item 2", "item 3"]}.
+- open_ended: use only when self-evaluation is educationally appropriate. Include "model_answer" or "rubric".
+
+Question quality rules:
+- Questions must be factually correct and useful for practical learning in {{SUBJECT}}.
+- Scenarios must include enough context to answer without relying on hidden assumptions.
+- Avoid uncertain, invented, overly version-sensitive, or rapidly changing facts unless {{SUBJECT}} explicitly includes a version.
+- Do not create duplicate or near-duplicate questions.
+- Do not use ambiguous wording or accidental hints.
+- Distractors must be plausible responses to the scenario and clearly incorrect.
+- Distribute correct option positions naturally. Do not use a predictable answer pattern.
+- Explanations must explain the decision process and why the chosen action is best.
+
+Strict JSON output rules:
+- Return raw JSON only.
+- Do not wrap the response in Markdown code fences.
+- Do not include commentary before or after the JSON.
+- Use valid JSON syntax, double-quoted strings, no trailing commas, no comments, no JavaScript syntax, no undefined values, and no unsupported fields.
+- Validate internally before responding: required fields exist, question count is exactly 30, type-specific fields are present, option indexes are valid, explanations are present, no duplicate questions exist, and JSON syntax is valid.
+- Do not show the validation process. Return only the corrected final JSON document.
+
+================================================================================
+PROMPT 7 - KNOWLEDGE-GAP / TRICK-MISCONCEPTION EXAM
+================================================================================
+
+Create an import-ready Neithra exam JSON document about {{SUBJECT}}.
+
+Goal: generate an exam designed to reveal knowledge gaps and misconceptions. Focus on commonly confused concepts, common mistakes, subtle differences, and ideas learners often think they understand but answer incorrectly. Do not use cheap trick questions.
+
+Generate exactly 30 questions:
+- 16 single_choice
+- 5 multiple_choice
+- 4 true_false
+- 2 fill_blank
+- 2 short_answer
+- 1 matching
+
+Use the language implied by {{SUBJECT}}. If {{SUBJECT}} is written in French, generate the exam in French; if it is written in English, generate it in English.
+
+The JSON must match this exact Neithra import structure:
+- Top-level JSON must be an object.
+- Required top-level fields: "title" and "questions".
+- Recommended top-level fields to include: "topic", "description", "version", "test_mode", "difficulty", "estimated_duration", "categories", "shuffle_questions", "shuffle_answers", "passing_score".
+- Use "test_mode": "exam".
+- Use "difficulty": "mixed".
+- Use "version": "1.0".
+- Use "shuffle_questions": false and "shuffle_answers": false.
+- Use "passing_score": 70.
+- Do not include top-level "id", "generated_date", "generatedAt", "question_count", timestamps, LLM names, session data, user answers, scores, elapsed time, attempt history, family fields, or any unsupported fields.
+
+Each question object must contain:
+- "id": a unique string such as "Q001", "Q002", continuing sequentially.
+- "type": one of exactly "single_choice", "multiple_choice", "true_false", "short_answer", "fill_blank", "matching", "ordering", "numerical", "scenario", "code", "open_ended".
+- "question": the learner-facing question text.
+- "explanation": a concise educational explanation.
+- "difficulty": "foundation", "intermediate", or "advanced".
+- "category": a useful category within {{SUBJECT}}.
+- "skills": an array of short skill labels.
+- "estimated_time": an integer number of seconds.
+- "points": a number.
+
+Type-specific requirements:
+- single_choice: include "options" as an array of 4 strings and "correct_answer" as the zero-based index of the one correct option.
+- multiple_choice: include "options" as an array of 5 strings and "correct_answers" as an array of zero-based indexes. There must be at least 2 correct options and at least 2 incorrect options.
+- true_false: include "correct_answer" as true or false.
+- short_answer: include "accepted_answers" as an array of acceptable exact short answers, plus "model_answer". You may also include "keywords" as an array of objects with "text" and numeric "weight".
+- fill_blank: include "accepted_answers" as an array of acceptable exact answers.
+- matching: include "matching_pairs" as an object whose keys and values are strings.
+- ordering: include "correct_order" as an array of strings in the correct sequence.
+- numerical: include "correct_answer" as a number and "tolerance" as a number. Use this type only when numeric assessment naturally fits {{SUBJECT}}.
+- scenario: include "scenario_context", "model_answer", and either "accepted_answers" or "keywords". Keywords must be objects with "text" and numeric "weight".
+- code: use only if coding is genuinely relevant to {{SUBJECT}}. Include "code_snippet" when useful, "reference_solution", and "rubric": {"checklist": ["item 1", "item 2", "item 3"]}.
+- open_ended: use only when self-evaluation is educationally appropriate. Include "model_answer" or "rubric".
+
+Question quality rules:
+- Questions must be factually correct and useful for diagnosing misunderstandings in {{SUBJECT}}.
+- Every difficult question must test a legitimate concept, not wording games.
+- Avoid uncertain, invented, overly version-sensitive, or rapidly changing facts unless {{SUBJECT}} explicitly includes a version.
+- Do not create duplicate or near-duplicate questions.
+- Do not use ambiguous wording or accidental hints.
+- Distractors should represent common wrong beliefs or common mistakes, while remaining clearly incorrect.
+- Distribute correct option positions naturally. Do not use a predictable answer pattern.
+- Explanations must name the misconception and explain the correct distinction.
+
+Strict JSON output rules:
+- Return raw JSON only.
+- Do not wrap the response in Markdown code fences.
+- Do not include commentary before or after the JSON.
+- Use valid JSON syntax, double-quoted strings, no trailing commas, no comments, no JavaScript syntax, no undefined values, and no unsupported fields.
+- Validate internally before responding: required fields exist, question count is exactly 30, type-specific fields are present, option indexes are valid, explanations are present, no duplicate questions exist, and JSON syntax is valid.
+- Do not show the validation process. Return only the corrected final JSON document.
+
+================================================================================
+PROMPT 8 - LARGE COMPREHENSIVE EXAM
+================================================================================
+
+Create an import-ready Neithra exam JSON document about {{SUBJECT}}.
+
+Goal: generate a larger exam for serious revision of {{SUBJECT}}. Cover the subject broadly, avoid excessive repetition, and include a sensible range of foundational, intermediate, and advanced material.
+
+Generate exactly 72 questions:
+- 36 single_choice
+- 10 multiple_choice
+- 8 true_false
+- 5 short_answer
+- 4 fill_blank
+- 3 matching
+- 3 ordering
+- 2 scenario
+- 1 numerical if numeric assessment naturally fits {{SUBJECT}}; otherwise make this question another single_choice question.
+
+Use the language implied by {{SUBJECT}}. If {{SUBJECT}} is written in French, generate the exam in French; if it is written in English, generate it in English.
+
+The JSON must match this exact Neithra import structure:
+- Top-level JSON must be an object.
+- Required top-level fields: "title" and "questions".
+- Recommended top-level fields to include: "topic", "description", "version", "test_mode", "difficulty", "estimated_duration", "categories", "shuffle_questions", "shuffle_answers", "passing_score".
+- Use "test_mode": "exam".
+- Use "difficulty": "mixed".
+- Use "version": "1.0".
+- Use "shuffle_questions": false and "shuffle_answers": false.
+- Use "passing_score": 70.
+- Do not include top-level "id", "generated_date", "generatedAt", "question_count", timestamps, LLM names, session data, user answers, scores, elapsed time, attempt history, family fields, or any unsupported fields.
+
+Each question object must contain:
+- "id": a unique string such as "Q001", "Q002", continuing sequentially.
+- "type": one of exactly "single_choice", "multiple_choice", "true_false", "short_answer", "fill_blank", "matching", "ordering", "numerical", "scenario", "code", "open_ended".
+- "question": the learner-facing question text.
+- "explanation": a concise educational explanation.
+- "difficulty": "foundation", "intermediate", "advanced", or "mixed".
+- "category": a useful category within {{SUBJECT}}.
+- "skills": an array of short skill labels.
+- "estimated_time": an integer number of seconds.
+- "points": a number.
+
+Type-specific requirements:
+- single_choice: include "options" as an array of 4 strings and "correct_answer" as the zero-based index of the one correct option.
+- multiple_choice: include "options" as an array of 5 strings and "correct_answers" as an array of zero-based indexes. There must be at least 2 correct options and at least 2 incorrect options.
+- true_false: include "correct_answer" as true or false.
+- short_answer: include "accepted_answers" as an array of acceptable exact short answers, plus "model_answer". You may also include "keywords" as an array of objects with "text" and numeric "weight".
+- fill_blank: include "accepted_answers" as an array of acceptable exact answers.
+- matching: include "matching_pairs" as an object whose keys and values are strings.
+- ordering: include "correct_order" as an array of strings in the correct sequence.
+- numerical: include "correct_answer" as a number and "tolerance" as a number. Use this type only when numeric assessment naturally fits {{SUBJECT}}.
+- scenario: include "scenario_context", "model_answer", and either "accepted_answers" or "keywords". Keywords must be objects with "text" and numeric "weight".
+- code: use only if coding is genuinely relevant to {{SUBJECT}}. Include "code_snippet" when useful, "reference_solution", and "rubric": {"checklist": ["item 1", "item 2", "item 3"]}.
+- open_ended: use only when self-evaluation is educationally appropriate. Include "model_answer" or "rubric".
+
+Question quality rules:
+- Questions must be factually correct and useful for broad revision of {{SUBJECT}}.
+- Cover major categories evenly and avoid overfocusing on one subtopic.
+- Avoid uncertain, invented, overly version-sensitive, or rapidly changing facts unless {{SUBJECT}} explicitly includes a version.
+- Do not create duplicate or near-duplicate questions.
+- Do not use ambiguous wording or accidental hints.
+- Distractors must be plausible, in the same conceptual area, and clearly incorrect.
+- Distribute correct option positions naturally. Do not use a predictable answer pattern.
+- Explanations must be concise enough for a large review set while still educational.
+
+Strict JSON output rules:
+- Return raw JSON only.
+- Do not wrap the response in Markdown code fences.
+- Do not include commentary before or after the JSON.
+- Use valid JSON syntax, double-quoted strings, no trailing commas, no comments, no JavaScript syntax, no undefined values, and no unsupported fields.
+- Validate internally before responding: required fields exist, question count is exactly 72, type-specific fields are present, option indexes are valid, explanations are present, no duplicate questions exist, and JSON syntax is valid.
+- Do not show the validation process. Return only the corrected final JSON document.
+
+================================================================================
+PROMPT 9 - QUICK REVISION EXAM
+================================================================================
+
+Create an import-ready Neithra exam JSON document about {{SUBJECT}}.
+
+Goal: generate a short high-value revision exam. Focus only on concepts someone studying {{SUBJECT}} absolutely should know.
+
+Generate exactly 16 questions:
+- 10 single_choice
+- 2 multiple_choice
+- 2 true_false
+- 1 fill_blank
+- 1 short_answer
+
+Use the language implied by {{SUBJECT}}. If {{SUBJECT}} is written in French, generate the exam in French; if it is written in English, generate it in English.
+
+The JSON must match this exact Neithra import structure:
+- Top-level JSON must be an object.
+- Required top-level fields: "title" and "questions".
+- Recommended top-level fields to include: "topic", "description", "version", "test_mode", "difficulty", "estimated_duration", "categories", "shuffle_questions", "shuffle_answers", "passing_score".
+- Use "test_mode": "exam".
+- Use "difficulty": "mixed".
+- Use "version": "1.0".
+- Use "shuffle_questions": false and "shuffle_answers": false.
+- Use "passing_score": 70.
+- Do not include top-level "id", "generated_date", "generatedAt", "question_count", timestamps, LLM names, session data, user answers, scores, elapsed time, attempt history, family fields, or any unsupported fields.
+
+Each question object must contain:
+- "id": a unique string such as "Q001", "Q002", continuing sequentially.
+- "type": one of exactly "single_choice", "multiple_choice", "true_false", "short_answer", "fill_blank", "matching", "ordering", "numerical", "scenario", "code", "open_ended".
+- "question": the learner-facing question text.
+- "explanation": a concise educational explanation.
+- "difficulty": "foundation", "intermediate", or "mixed".
+- "category": a useful category within {{SUBJECT}}.
+- "skills": an array of short skill labels.
+- "estimated_time": an integer number of seconds.
+- "points": a number.
+
+Type-specific requirements:
+- single_choice: include "options" as an array of 4 strings and "correct_answer" as the zero-based index of the one correct option.
+- multiple_choice: include "options" as an array of 5 strings and "correct_answers" as an array of zero-based indexes. There must be at least 2 correct options and at least 2 incorrect options.
+- true_false: include "correct_answer" as true or false.
+- short_answer: include "accepted_answers" as an array of acceptable exact short answers, plus "model_answer". You may also include "keywords" as an array of objects with "text" and numeric "weight".
+- fill_blank: include "accepted_answers" as an array of acceptable exact answers.
+- matching: include "matching_pairs" as an object whose keys and values are strings.
+- ordering: include "correct_order" as an array of strings in the correct sequence.
+- numerical: include "correct_answer" as a number and "tolerance" as a number. Use this type only when numeric assessment naturally fits {{SUBJECT}}.
+- scenario: include "scenario_context", "model_answer", and either "accepted_answers" or "keywords". Keywords must be objects with "text" and numeric "weight".
+- code: use only if coding is genuinely relevant to {{SUBJECT}}. Include "code_snippet" when useful, "reference_solution", and "rubric": {"checklist": ["item 1", "item 2", "item 3"]}.
+- open_ended: use only when self-evaluation is educationally appropriate. Include "model_answer" or "rubric".
+
+Question quality rules:
+- Questions must be factually correct and useful for quick revision of {{SUBJECT}}.
+- Choose high-yield concepts over niche details.
+- Avoid uncertain, invented, overly version-sensitive, or rapidly changing facts unless {{SUBJECT}} explicitly includes a version.
+- Do not create duplicate or near-duplicate questions.
+- Do not use ambiguous wording or accidental hints.
+- Distractors must be plausible, in the same conceptual area, and clearly incorrect.
+- Distribute correct option positions naturally. Do not use a predictable answer pattern.
+- Explanations must be concise and directly useful.
+
+Strict JSON output rules:
+- Return raw JSON only.
+- Do not wrap the response in Markdown code fences.
+- Do not include commentary before or after the JSON.
+- Use valid JSON syntax, double-quoted strings, no trailing commas, no comments, no JavaScript syntax, no undefined values, and no unsupported fields.
+- Validate internally before responding: required fields exist, question count is exactly 16, type-specific fields are present, option indexes are valid, explanations are present, no duplicate questions exist, and JSON syntax is valid.
+- Do not show the validation process. Return only the corrected final JSON document.
+
+================================================================================
+PROMPT 10 - PROGRESSIVE DIFFICULTY EXAM
+================================================================================
+
+Create an import-ready Neithra exam JSON document about {{SUBJECT}}.
+
+Goal: generate an exam that gradually moves from basic to intermediate to advanced questions while staying within {{SUBJECT}}. The progression must be meaningful.
+
+Generate exactly 36 questions:
+- Questions Q001 through Q012 must be foundation difficulty.
+- Questions Q013 through Q024 must be intermediate difficulty.
+- Questions Q025 through Q036 must be advanced difficulty.
+- Across the full exam, include 18 single_choice, 5 multiple_choice, 4 true_false, 3 short_answer, 2 fill_blank, 2 scenario, 1 matching, and 1 ordering.
+
+Use the language implied by {{SUBJECT}}. If {{SUBJECT}} is written in French, generate the exam in French; if it is written in English, generate it in English.
+
+The JSON must match this exact Neithra import structure:
+- Top-level JSON must be an object.
+- Required top-level fields: "title" and "questions".
+- Recommended top-level fields to include: "topic", "description", "version", "test_mode", "difficulty", "estimated_duration", "categories", "shuffle_questions", "shuffle_answers", "passing_score".
+- Use "test_mode": "exam".
+- Use "difficulty": "mixed".
+- Use "version": "1.0".
+- Use "shuffle_questions": false and "shuffle_answers": false.
+- Use "passing_score": 70.
+- Do not include top-level "id", "generated_date", "generatedAt", "question_count", timestamps, LLM names, session data, user answers, scores, elapsed time, attempt history, family fields, or any unsupported fields.
+
+Each question object must contain:
+- "id": a unique string such as "Q001", "Q002", continuing sequentially.
+- "type": one of exactly "single_choice", "multiple_choice", "true_false", "short_answer", "fill_blank", "matching", "ordering", "numerical", "scenario", "code", "open_ended".
+- "question": the learner-facing question text.
+- "explanation": a concise educational explanation.
+- "difficulty": "foundation", "intermediate", or "advanced" according to the required progression.
+- "category": a useful category within {{SUBJECT}}.
+- "skills": an array of short skill labels.
+- "estimated_time": an integer number of seconds.
+- "points": a number.
+
+Type-specific requirements:
+- single_choice: include "options" as an array of 4 strings and "correct_answer" as the zero-based index of the one correct option.
+- multiple_choice: include "options" as an array of 5 strings and "correct_answers" as an array of zero-based indexes. There must be at least 2 correct options and at least 2 incorrect options.
+- true_false: include "correct_answer" as true or false.
+- short_answer: include "accepted_answers" as an array of acceptable exact short answers, plus "model_answer". You may also include "keywords" as an array of objects with "text" and numeric "weight".
+- fill_blank: include "accepted_answers" as an array of acceptable exact answers.
+- matching: include "matching_pairs" as an object whose keys and values are strings.
+- ordering: include "correct_order" as an array of strings in the correct sequence.
+- numerical: include "correct_answer" as a number and "tolerance" as a number. Use this type only when numeric assessment naturally fits {{SUBJECT}}.
+- scenario: include "scenario_context", "model_answer", and either "accepted_answers" or "keywords". Keywords must be objects with "text" and numeric "weight".
+- code: use only if coding is genuinely relevant to {{SUBJECT}}. Include "code_snippet" when useful, "reference_solution", and "rubric": {"checklist": ["item 1", "item 2", "item 3"]}.
+- open_ended: use only when self-evaluation is educationally appropriate. Include "model_answer" or "rubric".
+
+Question quality rules:
+- Questions must be factually correct and useful for learning {{SUBJECT}}.
+- The first third should check basics, the middle third should apply concepts, and the final third should require deeper reasoning.
+- Avoid uncertain, invented, overly version-sensitive, or rapidly changing facts unless {{SUBJECT}} explicitly includes a version.
+- Do not create duplicate or near-duplicate questions.
+- Do not use ambiguous wording or accidental hints.
+- Distractors must be plausible, in the same conceptual area, and clearly incorrect.
+- Distribute correct option positions naturally. Do not use a predictable answer pattern.
+- Explanations must help the learner understand why the difficulty increases.
+
+Strict JSON output rules:
+- Return raw JSON only.
+- Do not wrap the response in Markdown code fences.
+- Do not include commentary before or after the JSON.
+- Use valid JSON syntax, double-quoted strings, no trailing commas, no comments, no JavaScript syntax, no undefined values, and no unsupported fields.
+- Validate internally before responding: required fields exist, question count is exactly 36, type-specific fields are present, option indexes are valid, explanations are present, no duplicate questions exist, progression is respected, and JSON syntax is valid.
+- Do not show the validation process. Return only the corrected final JSON document.
